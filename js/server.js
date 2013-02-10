@@ -2,8 +2,9 @@
 
 var WebSocketServer =  require('websocket').server;
 var http = require('http');
-var clients = [];
+var clients = {};
 var rooms = {123: {id: 123, name: "Test Room", capacity: 16, players: []}};
+var uidCounter = 0;
 
 var server = http.createServer(function(request, response) {
     console.log((new Date()) + ' Received request for ' + request.url);
@@ -30,7 +31,8 @@ wsServer.on('request', function(request) {
     var con = request.accept('appstract', request.origin);
 
     console.log((new Date()) + ' Connection accepted.');
-    clients.push(con);
+    var cID = uidCounter++;
+    clients[cID] = {id: cID, connection: con};
 
     con.on('message', function(message) {
         if (message.type === 'utf8') {
@@ -42,11 +44,15 @@ wsServer.on('request', function(request) {
     });
 
     function processMessageFromClient(connection,message) {
-      clients.forEach(function (outputConnection) {
-        if (outputConnection != connection) {
-          outputConnection.send(message.utf8Data, sendCallback);
+      console.log(clients);
+
+      for(var otherCID in clients)
+      { 
+        if (otherCID != cID) {
+          var client = clients[cID];
+          client.connection.send(message.utf8Data, sendCallback);
         }
-      });
+      }
 
       var msg = JSON.parse(message);
       switch(msg.msg_type) {
@@ -78,8 +84,13 @@ wsServer.on('request', function(request) {
    
     con.on('close', function(reasonCode, description) {
         console.log((new Date()) + ' Peer ' + con.remoteAddress + ' disconnected.');
-        clients.remove
-    });
-    
-});
 
+        delete clients[cID];
+
+        for(var roomID in rooms)
+        {
+          var room = rooms[roomID];
+          delete room.players[cID];
+        }
+    });
+});
