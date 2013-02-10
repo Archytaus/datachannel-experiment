@@ -1,0 +1,6 @@
+Stun / ICE
+  - Way to discover an external IP of another computer
+    - 
+  - Maps a path between the two peers
+  - Can be secured with TLS
+  - 
