@@ -3,7 +3,7 @@
 var WebSocketServer =  require('websocket').server;
 var http = require('http');
 var clients = {};
-var rooms = {123: {id: 123, name: "Test Room", capacity: 16, players: []}};
+var rooms = {123: {id: 123, name: "Test Room", capacity: 16, players: {}}};
 var uidCounter = 0;
 
 var server = http.createServer(function(request, response) {
@@ -44,8 +44,6 @@ wsServer.on('request', function(request) {
     });
 
     function processMessageFromClient(connection,message) {
-      console.log(clients);
-
       for(var otherCID in clients)
       { 
         if (otherCID != cID) {
@@ -68,7 +66,7 @@ wsServer.on('request', function(request) {
           console.log(msg.msg_type);
           var roomID = msg.data.id;
           var room = rooms[roomID];
-          room.players.push(connection);
+          room.players[cID] = clients[cID];
 
           var response = {}
           response.msg_type = "ROOMJOINED";
