@@ -115,7 +115,7 @@ var openChannel = function () {
           for(var room_index in rooms)
           {
             var room = rooms[room_index];
-            $('#game_rooms').append("<li onclick='JoinRoom(" + room.id + ")'>" + room.name + "</li>");
+            $('#game_rooms tbody').append("<tr><td onclick='JoinRoom(" + room.id + ")'>" + room.name + "</td><td>" + room.player_count + " / " + room.capacity + "</td></tr>");
           }
           break;
         case "ROOMJOINED":
