@@ -49,18 +49,33 @@ wsServer.on('request', function(request) {
            console.log('Received Binary Message of ' + message.binaryData.length + ' bytes');
         }
     });
+    
+
+    function passMessageToOtherClients(msg) {
+      try
+      {
+        for(var otherCID in clients){ 
+          if (otherCID != cID) {
+            var client = clients[otherCID];
+            client.connection.send(msg, sendCallback);
+          }
+        }
+      }
+      catch(e)
+      {
+        console.log("Failed to send message: " + msg);
+      }
+    }
 
     function processMessageFromClient(connection,message) {
       
       var handled = false;
-
+      
       var msg = JSON.parse(message);
+      console.log("Connection " + cID + " received " + msg.msg_type);
+
       switch(msg.msg_type) {
         case "GAMEROOMS":
-          console.log(msg.msg_type);
-
-          console.log(rooms);
-
           var response = {}
           response.msg_type = "GAMEROOMS";
           response.data = {rooms: rooms};
@@ -68,8 +83,8 @@ wsServer.on('request', function(request) {
           connection.send(JSON.stringify(response, roomReplacer));
           handled = true;
           break;
+          
         case "JOINROOM":
-          console.log(msg.msg_type);
           var roomID = msg.data.id;
           var room = rooms[roomID];
           room.players[cID] = clients[cID];
@@ -82,18 +97,24 @@ wsServer.on('request', function(request) {
           connection.send(JSON.stringify(response));
           handled = true;
           break;
+        case "OFFER":
+          console.log("OFFER sdp section");
+          
+          passMessageToOtherClients(JSON.stringify(msg));
+          handled = true;
+          break;
+        case "CANDIDATE":
+          console.log("CANDIDATE :" + msg.candidate);
+          passMessageToOtherClients(JSON.stringify(msg));
 
+          handled = true;
+          break;
         default:
           console.log('Not switched on ' + msg.msg_type);
       }      
 
       if (!handled){
-        for(var otherCID in clients){ 
-          if (otherCID != cID) {
-            var client = clients[cID];
-            client.connection.send(message.utf8Data, sendCallback);
-          }
-        }
+        passMessageToOtherClients(JSON.stringify(msg));
       }
 
     }

@@ -13,15 +13,16 @@ var nodeHostPort     = "8080";
 
 var stunServer       = "stun:stun.l.google.com:19302";
 var channelReady     = false;
-var localStream;
+var dataChannel;
 var socket;
+var pc;
 
 // This function sends candidates to the remote peer, via the node server
 var onIceCandidate = function(event) {
 
     if (event.candidate) {
-
        trace("openChannel Sending ICE candidate to remote peer : " + event.candidate.candidate);
+       //TODO: rs - find a way to send the room number so that it is only shared with others in the same room
        var msgCANDIDATE = {};
        msgCANDIDATE.msg_type  = 'CANDIDATE';
        msgCANDIDATE.candidate = event.candidate.candidate;
@@ -48,33 +49,84 @@ var createPeerConnection = function(connectionId, initiatorFlag) {
     pc.onconnecting   = onSessionConnecting;
     pc.onopen         = onSessionOpened;
 
-    // The following is for the SERVER side
-    pc.onaddstream = function(event) {
-       trace("createPeerConnection Remote stream added.");
-       var url = webkitURL.createObjectURL(event.stream);
-       trace("createPeerConnection url = " + url);
-       remoteStream = event.stream;
-       $("#remote-video").attr("src",url);
-    };
-
-    localStream = pc.createDataChannel("sendDataChannel", 
+    dataChannel = pc.createDataChannel("sendDataChannel", 
                                          {reliable: false});
 
-    pc.onremovestream = onRemoteStreamRemoved;
+    dataChannel.onopen = onSendChannelStateChange;
+    dataChannel.onclose = onSendChannelStateChange;
+    dataChannel.onmessage = onReceiveMessageCallback;
+
+    pc.createOffer(onOfferSuccess, onOfferFailure);
 
     trace("createPeerConnection Created webkitRTCPeerConnnection " + connectionId);
 }
 
+var onOfferSuccess = function(sessionDescription) {
+  trace("onOfferSuccess creating offer");
+
+  pc.setLocalDescription(sessionDescription, onSetLocalDescriptionSuccess, onSetLocalDescriptionError);
+  
+  var msgOFFER = {};
+  msgOFFER.msg_type = 'OFFER';
+  msgOFFER.data = sessionDescription;
+  
+  trace("onOfferSuccess - Sending session description : " + msgOFFER.data.sdp);
+  trace("onOfferSuccess - Sending sdp : " + sessionDescription.sdp);
+
+  socket.send(JSON.stringify(msgOFFER));
+}
+
+var onOfferFailure = function(error) {
+  trace("onOfferFailure failed to create offer: " + error);
+}
+
+var onAnswerSuccess = function(sessionDescription) {
+  trace("onAnswerSuccess creating answer");
+
+  pc.setLocalDescription(sessionDescription, onSetLocalDescriptionSuccess, onSetLocalDescriptionError);
+  
+  var msgANSWER = {};
+  msgANSWER.msg_type = 'ANSWER';
+  msgANSWER.data = sessionDescription;
+  
+  socket.send(JSON.stringify(msgANSWER));
+};
+
+var onAnswerFailure = function(error) {
+  trace("onAnswerFailure failed to create answer: " + error);
+};
+
+var onSetLocalDescriptionSuccess = function(){
+  trace("onSetLocalDescriptionSuccess set the local description");
+};
+
+var onSetLocalDescriptionError = function(error) {
+  trace("onSetRemoteDescriptionError failed to set the local description: " + error);
+};
+
+var onSetRemoteDescriptionSuccess = function(){
+  trace("onSetRemoteDescriptionSuccess set the remote description");
+};
+
+var onSetRemoteDescriptionError = function(error) {
+  trace("onSetRemoteDescriptionError failed to set the remote description: " + error);
+};
+
 var onSessionConnecting = function(message) {
     trace("onSessionConnecting Session connecting");
-}
+};
 
 var onSessionOpened = function(message) {
     trace("onSessionOpened Session opened");
+};
+
+function onReceiveMessageCallback(event) {
+  trace('Received Message ' + JSON.stringify(event));
 }
 
-var onRemoteStreamRemoved = function(event) {
-    trace("onRemoteStreamRemoved","Remote stream removed");
+function onSendChannelStateChange() {
+  var readyState = dataChannel.readyState;
+  trace('Send channel state is: ' + readyState);
 }
 
 // Open a channel towards the Node server
@@ -92,11 +144,11 @@ var openChannel = function () {
     };
 
     socket.onerror = function (error) {
-       trace("openChannel",'Channel error.', error);
+       trace("openChannel - Channel error:" + error);
     };
 
     socket.onclose = function () {
-       trace("openChannel",'Channel close.');
+       trace("openChannel - Channel close.");
        
        channelReady = false;
     };
@@ -120,10 +172,25 @@ var openChannel = function () {
           break;
         case "ROOMJOINED":
           trace("ROOMJOINED request");  
-        
-        // Unexpected, but reserved for other message types
+          createPeerConnection();
+          break;
+
+        case "OFFER":
+          trace("OFFER - " + msg.data.sdp);
+
+          //TODO: rs - not working correctly
+          pc.setRemoteDescription(new RTCSessionDescription(msg.data), onSetRemoteDescriptionSuccess, onSetRemoteDescriptionError);
+          pc.createAnswer(onAnswerSuccess, onAnswerFailure);
+          
+          break;
+        case "CANDIDATE":
+          var candidate = new RTCIceCandidate({candidate: msg.candidate});
+          pc.addIceCandidate(candidate);
+          break;
+
         default:
-           trace("openChannel default");
+          // Unexpected, but reserved for other message types
+          trace("openChannel unknown message " + msg.msg_type);
       }
 
     };
