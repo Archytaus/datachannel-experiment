@@ -19,17 +19,13 @@ var pc;
 
 // This function sends candidates to the remote peer, via the node server
 var onIceCandidate = function(event) {
-
     if (event.candidate) {
-       trace("openChannel Sending ICE candidate to remote peer : " + event.candidate.candidate);
+       trace("openChannel - Sending ICE candidate to remote peer : " + event.candidate.candidate);
        //TODO: rs - find a way to send the room number so that it is only shared with others in the same room
        var msgCANDIDATE = {};
        msgCANDIDATE.msg_type  = 'CANDIDATE';
        msgCANDIDATE.candidate = event.candidate.candidate;
        socket.send(JSON.stringify(msgCANDIDATE));
-
-    } else {
-       trace("onIceCandidate End of candidates");
     }
 }
 
@@ -48,6 +44,8 @@ var createPeerConnection = function(connectionId, initiatorFlag) {
     pc.onicecandidate = onIceCandidate;
     pc.onconnecting   = onSessionConnecting;
     pc.onopen         = onSessionOpened;
+    pc.onnegotiationneeded = onNegotiationNeeded;
+    pc.ondatachannel = onDataChannel;
 
     dataChannel = pc.createDataChannel("sendDataChannel", 
                                          {reliable: false});
@@ -56,25 +54,36 @@ var createPeerConnection = function(connectionId, initiatorFlag) {
     dataChannel.onclose = onSendChannelStateChange;
     dataChannel.onmessage = onReceiveMessageCallback;
 
-    pc.createOffer(onOfferSuccess, onOfferFailure);
-
-    trace("createPeerConnection Created webkitRTCPeerConnnection " + connectionId);
+    trace("createPeerConnection - Created webkitRTCPeerConnnection " + connectionId);
 }
+
+var onDataChannel = function(event) {
+  dataChannel = event.channel;
+};
+
+var onNegotiationNeeded = function () {
+  pc.createOffer(onOfferSuccess, onOfferFailure);
+};
 
 var onOfferSuccess = function(sessionDescription) {
   trace("onOfferSuccess creating offer");
 
-  pc.setLocalDescription(sessionDescription, onSetLocalDescriptionSuccess, onSetLocalDescriptionError);
-  
-  var msgOFFER = {};
-  msgOFFER.msg_type = 'OFFER';
-  msgOFFER.data = sessionDescription;
-  
-  trace("onOfferSuccess - Sending session description : " + msgOFFER.data.sdp);
-  trace("onOfferSuccess - Sending sdp : " + sessionDescription.sdp);
+  var onOfferSetLocalDescriptionSuccess = function() {
+    trace("onOfferSuccess - Set the local description");
 
-  socket.send(JSON.stringify(msgOFFER));
+    var msgOFFER = {};
+    msgOFFER.msg_type = 'OFFER';
+    msgOFFER.data = pc.localDescription;
+    
+    // trace("onOfferSuccess - Sending session description : " + msgOFFER.data.sdp);
+    // trace("onOfferSuccess - Sending sdp : " + sessionDescription.sdp);
+
+    socket.send(JSON.stringify(msgOFFER));  
+  }; 
+
+  pc.setLocalDescription(sessionDescription, onOfferSetLocalDescriptionSuccess, onSetLocalDescriptionError);
 }
+
 
 var onOfferFailure = function(error) {
   trace("onOfferFailure failed to create offer: " + error);
@@ -83,13 +92,18 @@ var onOfferFailure = function(error) {
 var onAnswerSuccess = function(sessionDescription) {
   trace("onAnswerSuccess creating answer");
 
-  pc.setLocalDescription(sessionDescription, onSetLocalDescriptionSuccess, onSetLocalDescriptionError);
+  var onAnswerSetLocalDescriptionSuccess = function() {
+    trace("onAnswerSuccess - Set the local description");
   
-  var msgANSWER = {};
-  msgANSWER.msg_type = 'ANSWER';
-  msgANSWER.data = sessionDescription;
+    var msgANSWER = {};
+    msgANSWER.msg_type = 'ANSWER';
+    msgANSWER.data = pc.localDescription;
+    
+    socket.send(JSON.stringify(msgANSWER));
+  }; 
+
+  pc.setLocalDescription(sessionDescription, onAnswerSetLocalDescriptionSuccess, onSetLocalDescriptionError);
   
-  socket.send(JSON.stringify(msgANSWER));
 };
 
 var onAnswerFailure = function(error) {
@@ -184,6 +198,8 @@ var openChannel = function () {
           
           break;
         case "CANDIDATE":
+          trace("CANDIDATE - " + JSON.stringify(msg.candidate));
+
           var candidate = new RTCIceCandidate({candidate: msg.candidate});
           pc.addIceCandidate(candidate);
           break;
