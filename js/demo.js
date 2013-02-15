@@ -1,6 +1,8 @@
+'use strict';
+
 function trace(text) {
   // This function is used for logging.
-  if (text[text.length - 1] == '\n') {
+  if (text[text.length - 1] === '\n') {
     text = text.substring(0, text.length - 1);
   }
   console.log((performance.now() / 1000).toFixed(3) + ": " + text);
@@ -25,44 +27,32 @@ var onIceCandidate = function(event) {
        var msgCANDIDATE = {};
        msgCANDIDATE.msg_type  = 'CANDIDATE';
        msgCANDIDATE.candidate = event.candidate.candidate;
+       msgCANDIDATE.id = event.candidate.sdpMid;
+       msgCANDIDATE.label = event.candidate.sdpMLineIndex;
+
        socket.send(JSON.stringify(msgCANDIDATE));
     }
-}
-
-// Create the peer connection (via the node server)
-var createPeerConnection = function(connectionId, initiatorFlag) {
-
-    var pc_config = {"iceServers": [{"url": stunServer}]};
-    // var pc_config = null;
-
-    pc = new RTCPeerConnection(pc_config, {
-      optional: [{
-        RtpDataChannels: true
-      }]}
-    );
-
-    pc.onicecandidate = onIceCandidate;
-    pc.onconnecting   = onSessionConnecting;
-    pc.onopen         = onSessionOpened;
-    pc.onnegotiationneeded = onNegotiationNeeded;
-    pc.ondatachannel = onDataChannel;
-
-    dataChannel = pc.createDataChannel("sendDataChannel", 
-                                         {reliable: false});
-
-    dataChannel.onopen = onSendChannelStateChange;
-    dataChannel.onclose = onSendChannelStateChange;
-    dataChannel.onmessage = onReceiveMessageCallback;
-
-    trace("createPeerConnection - Created webkitRTCPeerConnnection " + connectionId);
-}
+};
 
 var onDataChannel = function(event) {
+  trace("onDataChannel - Data channel received");
   dataChannel = event.channel;
+
+  dataChannel.onopen = onSendChannelStateChange;
+  dataChannel.onclose = onSendChannelStateChange;
+  dataChannel.onmessage = onReceiveMessageCallback;
 };
 
 var onNegotiationNeeded = function () {
   pc.createOffer(onOfferSuccess, onOfferFailure);
+};
+
+var onSetLocalDescriptionSuccess = function(){
+  trace("onSetLocalDescriptionSuccess set the local description");
+};
+
+var onSetLocalDescriptionError = function(error) {
+  trace("onSetRemoteDescriptionError failed to set the local description: " + error);
 };
 
 var onOfferSuccess = function(sessionDescription) {
@@ -74,32 +64,34 @@ var onOfferSuccess = function(sessionDescription) {
     var msgOFFER = {};
     msgOFFER.msg_type = 'OFFER';
     msgOFFER.data = pc.localDescription;
-    
-    // trace("onOfferSuccess - Sending session description : " + msgOFFER.data.sdp);
-    // trace("onOfferSuccess - Sending sdp : " + sessionDescription.sdp);
 
     socket.send(JSON.stringify(msgOFFER));  
   }; 
 
   pc.setLocalDescription(sessionDescription, onOfferSetLocalDescriptionSuccess, onSetLocalDescriptionError);
-}
-
+};
 
 var onOfferFailure = function(error) {
   trace("onOfferFailure failed to create offer: " + error);
-}
+};
 
 var onAnswerSuccess = function(sessionDescription) {
   trace("onAnswerSuccess creating answer");
 
   var onAnswerSetLocalDescriptionSuccess = function() {
     trace("onAnswerSuccess - Set the local description");
-  
-    var msgANSWER = {};
-    msgANSWER.msg_type = 'ANSWER';
-    msgANSWER.data = pc.localDescription;
     
-    socket.send(JSON.stringify(msgANSWER));
+    if (pc.remoteDescription.type === 'offer') {
+      trace("onAnswerSuccess - Sending answer")
+      var msgANSWER = {};
+      msgANSWER.msg_type = 'ANSWER';
+      msgANSWER.data = pc.localDescription;
+    
+      socket.send(JSON.stringify(msgANSWER));  
+    }
+    else {
+      trace("onAnswerSuccess - No answer required")
+    }
   }; 
 
   pc.setLocalDescription(sessionDescription, onAnswerSetLocalDescriptionSuccess, onSetLocalDescriptionError);
@@ -108,14 +100,6 @@ var onAnswerSuccess = function(sessionDescription) {
 
 var onAnswerFailure = function(error) {
   trace("onAnswerFailure failed to create answer: " + error);
-};
-
-var onSetLocalDescriptionSuccess = function(){
-  trace("onSetLocalDescriptionSuccess set the local description");
-};
-
-var onSetLocalDescriptionError = function(error) {
-  trace("onSetRemoteDescriptionError failed to set the local description: " + error);
 };
 
 var onSetRemoteDescriptionSuccess = function(){
@@ -127,11 +111,11 @@ var onSetRemoteDescriptionError = function(error) {
 };
 
 var onSessionConnecting = function(message) {
-    trace("onSessionConnecting Session connecting");
+  trace("onSessionConnecting Session connecting");
 };
 
 var onSessionOpened = function(message) {
-    trace("onSessionOpened Session opened");
+  trace("onSessionOpened Session opened");
 };
 
 function onReceiveMessageCallback(event) {
@@ -141,6 +125,27 @@ function onReceiveMessageCallback(event) {
 function onSendChannelStateChange() {
   var readyState = dataChannel.readyState;
   trace('Send channel state is: ' + readyState);
+}
+
+// Create the peer connection (via the node server)
+var createPeerConnection = function(connectionId, initiatorFlag) {
+
+  var pc_config = {"iceServers": [{"url": stunServer}]};
+  // var pc_config = null;
+
+  pc = new RTCPeerConnection(pc_config, {
+    optional: [{
+      RtpDataChannels: true
+    }]}
+  );
+
+  pc.onicecandidate = onIceCandidate;
+  pc.onconnecting   = onSessionConnecting;
+  pc.onopen         = onSessionOpened;
+  pc.onnegotiationneeded = onNegotiationNeeded;
+  pc.ondatachannel = onDataChannel;
+
+  trace("createPeerConnection - Created webkitRTCPeerConnnection " + connectionId);
 }
 
 // Open a channel towards the Node server
@@ -184,23 +189,59 @@ var openChannel = function () {
             $('#game_rooms tbody').append("<tr><td onclick='JoinRoom(" + room.id + ")'>" + room.name + "</td><td>" + room.player_count + " / " + room.capacity + "</td></tr>");
           }
           break;
+
         case "ROOMJOINED":
           trace("ROOMJOINED request");  
+          var peers = msg.peers;
+
           createPeerConnection();
+
+          if(peers.length > 0) {
+            trace("Creating data channel");
+            // NEED TO CREATE A PEER CONNECTION AND DATACHANNEL FOR EVERY PEER THAT JOINS
+            // Should only be creating on of these for the offering party...
+            dataChannel = pc.createDataChannel("sendDataChannel", 
+                                                 {reliable: false});
+            
+            var dataChannelOpened = function(){
+              trace("Data channel opened");
+
+              dataChannel.send({data: "Hello world!"});
+            };
+
+            dataChannel.onopen = dataChannelOpened;
+            dataChannel.onclose = onSendChannelStateChange;
+            dataChannel.onmessage = onReceiveMessageCallback;
+          }
+
           break;
 
         case "OFFER":
-          trace("OFFER - " + msg.data.sdp);
+          trace("OFFER - " + msg.data);
+
+          var onSetOfferRemoteSuccess = function(){
+            trace("onSetOfferRemoteSuccess set the remote description");
+
+            pc.createAnswer(onAnswerSuccess, onAnswerFailure);
+          };
 
           //TODO: rs - not working correctly
-          pc.setRemoteDescription(new RTCSessionDescription(msg.data), onSetRemoteDescriptionSuccess, onSetRemoteDescriptionError);
-          pc.createAnswer(onAnswerSuccess, onAnswerFailure);
+          var remoteDescription = new RTCSessionDescription(msg.data);
+          pc.setRemoteDescription(remoteDescription, onSetOfferRemoteSuccess, onSetRemoteDescriptionError);
           
           break;
-        case "CANDIDATE":
-          trace("CANDIDATE - " + JSON.stringify(msg.candidate));
 
-          var candidate = new RTCIceCandidate({candidate: msg.candidate});
+        case "ANSWER":
+          trace("ANSWER - " + JSON.stringify(msg.data));
+
+          var remoteDescription = new RTCSessionDescription(msg.data);
+          pc.setRemoteDescription(remoteDescription, onSetRemoteDescriptionSuccess, onSetRemoteDescriptionError);
+          break;
+
+        case "CANDIDATE":
+          trace("CANDIDATE - " + JSON.stringify(msg));
+
+          var candidate = new RTCIceCandidate({sdpMLineIndex:msg.label, candidate: msg.candidate});
           pc.addIceCandidate(candidate);
           break;
 
@@ -219,7 +260,7 @@ var requestGameRooms = function() {
   msgREQUEST.data = {};
 
   socket.send(JSON.stringify(msgREQUEST));
-}
+};
 
 openChannel();
 
@@ -230,4 +271,4 @@ var JoinRoom = function(roomID) {
   msgREQUEST.data = {id: roomID};
 
   socket.send(JSON.stringify(msgREQUEST));
-}
+};

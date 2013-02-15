@@ -2,8 +2,8 @@
 
 var WebSocketServer =  require('websocket').server;
 var http = require('http');
-var clients = {};
-var rooms = {123: {id: 123, name: "Test Room", capacity: 16, players: {}, player_count: 0}};
+var clients = [];
+var rooms = {123: {id: 123, name: "Test Room", capacity: 16, players: [], player_count: 0}};
 var uidCounter = 0;
 
 var server = http.createServer(function(request, response) {
@@ -27,7 +27,7 @@ var roomReplacer = function(key, value){
     return undefined;
   }
   return value;
-}
+};
 
 function sendCallback(err) {
     if (err) console.error("send() error: " + err);
@@ -39,7 +39,8 @@ wsServer.on('request', function(request) {
 
     console.log((new Date()) + ' Connection accepted.');
     var cID = uidCounter++;
-    clients[cID] = {id: cID, connection: con};
+    var client = {id: cID, connection: con};
+    clients.push(client);
 
     con.on('message', function(message) {
         if (message.type === 'utf8') {
@@ -54,16 +55,16 @@ wsServer.on('request', function(request) {
     function passMessageToOtherClients(msg) {
       try
       {
-        for(var otherCID in clients){ 
-          if (otherCID != cID) {
-            var client = clients[otherCID];
-            client.connection.send(msg, sendCallback);
+        for(var otherIndex in clients){ 
+          var otherClient = clients[otherIndex];
+          if (otherClient.id != cID) {
+            otherClient.connection.send(msg, sendCallback);
           }
         }
       }
       catch(e)
       {
-        console.log("Failed to send message: " + msg);
+        console.log("Failed to send message: (" + e + ") - " + msg);
       }
     }
 
@@ -85,16 +86,27 @@ wsServer.on('request', function(request) {
           break;
           
         case "JOINROOM":
+          
           var roomID = msg.data.id;
           var room = rooms[roomID];
-          room.players[cID] = clients[cID];
-          room.player_count += 1;
-
+          
           var response = {}
           response.msg_type = "ROOMJOINED";
-          response.data = null;
+          response.peers = [];
           
+          for(var index in room.players)
+          {
+            var player = room.players[index];;
+            response.peers.push({id: player.id})
+          }
+
           connection.send(JSON.stringify(response));
+          
+          console.log("Existing players: " + JSON.stringify(response.peers))
+
+          room.players.push(client);
+          room.player_count += 1;
+
           handled = true;
           break;
         case "OFFER":
@@ -109,6 +121,9 @@ wsServer.on('request', function(request) {
 
           handled = true;
           break;
+        case "ANSWER":
+          passMessageToOtherClients(JSON.stringify(msg));
+          handled = true;
         default:
           console.log('Not switched on ' + msg.msg_type);
       }      
