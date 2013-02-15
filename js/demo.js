@@ -15,37 +15,9 @@ var nodeHostPort     = "8080";
 
 var stunServer       = "stun:stun.l.google.com:19302";
 var channelReady     = false;
-var dataChannel;
 var socket;
-var pc;
-
-// This function sends candidates to the remote peer, via the node server
-var onIceCandidate = function(event) {
-    if (event.candidate) {
-       trace("openChannel - Sending ICE candidate to remote peer : " + event.candidate.candidate);
-       //TODO: rs - find a way to send the room number so that it is only shared with others in the same room
-       var msgCANDIDATE = {};
-       msgCANDIDATE.msg_type  = 'CANDIDATE';
-       msgCANDIDATE.candidate = event.candidate.candidate;
-       msgCANDIDATE.id = event.candidate.sdpMid;
-       msgCANDIDATE.label = event.candidate.sdpMLineIndex;
-
-       socket.send(JSON.stringify(msgCANDIDATE));
-    }
-};
-
-var onDataChannel = function(event) {
-  trace("onDataChannel - Data channel received");
-  dataChannel = event.channel;
-
-  dataChannel.onopen = onSendChannelStateChange;
-  dataChannel.onclose = onSendChannelStateChange;
-  dataChannel.onmessage = onReceiveMessageCallback;
-};
-
-var onNegotiationNeeded = function () {
-  pc.createOffer(onOfferSuccess, onOfferFailure);
-};
+var peers = [];
+var my_id = 0;
 
 var onSetLocalDescriptionSuccess = function(){
   trace("onSetLocalDescriptionSuccess set the local description");
@@ -55,47 +27,8 @@ var onSetLocalDescriptionError = function(error) {
   trace("onSetRemoteDescriptionError failed to set the local description: " + error);
 };
 
-var onOfferSuccess = function(sessionDescription) {
-  trace("onOfferSuccess creating offer");
-
-  var onOfferSetLocalDescriptionSuccess = function() {
-    trace("onOfferSuccess - Set the local description");
-
-    var msgOFFER = {};
-    msgOFFER.msg_type = 'OFFER';
-    msgOFFER.data = pc.localDescription;
-
-    socket.send(JSON.stringify(msgOFFER));  
-  }; 
-
-  pc.setLocalDescription(sessionDescription, onOfferSetLocalDescriptionSuccess, onSetLocalDescriptionError);
-};
-
 var onOfferFailure = function(error) {
   trace("onOfferFailure failed to create offer: " + error);
-};
-
-var onAnswerSuccess = function(sessionDescription) {
-  trace("onAnswerSuccess creating answer");
-
-  var onAnswerSetLocalDescriptionSuccess = function() {
-    trace("onAnswerSuccess - Set the local description");
-    
-    if (pc.remoteDescription.type === 'offer') {
-      trace("onAnswerSuccess - Sending answer")
-      var msgANSWER = {};
-      msgANSWER.msg_type = 'ANSWER';
-      msgANSWER.data = pc.localDescription;
-    
-      socket.send(JSON.stringify(msgANSWER));  
-    }
-    else {
-      trace("onAnswerSuccess - No answer required")
-    }
-  }; 
-
-  pc.setLocalDescription(sessionDescription, onAnswerSetLocalDescriptionSuccess, onSetLocalDescriptionError);
-  
 };
 
 var onAnswerFailure = function(error) {
@@ -119,25 +52,86 @@ var onSessionOpened = function(message) {
 };
 
 function onReceiveMessageCallback(event) {
-  trace('Received Message ' + JSON.stringify(event));
+  trace('Received Message ' + JSON.stringify(event.data));
 }
 
-function onSendChannelStateChange() {
-  var readyState = dataChannel.readyState;
-  trace('Send channel state is: ' + readyState);
+function findPeerByID(id){
+  for(var peerIndex in peers) {
+    var peer = peers[peerIndex];
+    if(peer.id == id)
+      return peer;
+  }
+
+  return undefined;
 }
 
 // Create the peer connection (via the node server)
-var createPeerConnection = function(connectionId, initiatorFlag) {
-
+var createPeerConnection = function(newPeerId) {
+  
   var pc_config = {"iceServers": [{"url": stunServer}]};
   // var pc_config = null;
 
-  pc = new RTCPeerConnection(pc_config, {
+  var pc = new RTCPeerConnection(pc_config, {
     optional: [{
       RtpDataChannels: true
     }]}
   );
+  var peer = {id: newPeerId, connection: pc, dataChannel: undefined };
+
+  // This function sends candidates to the remote peer, via the node server
+  var onIceCandidate = function(event) {
+      if (event.candidate) {
+         trace("openChannel - Sending ICE candidate to remote peer : " + event.candidate.candidate);
+         
+         //TODO: rs - find a way to send the room number so that it is only shared with others in the same room
+         var msgCANDIDATE = {};
+         msgCANDIDATE.msg_type  = 'CANDIDATE';
+         msgCANDIDATE.candidate = event.candidate.candidate;
+         msgCANDIDATE.id = event.candidate.sdpMid;
+         msgCANDIDATE.label = event.candidate.sdpMLineIndex;
+         msgCANDIDATE.peer_id = my_id;
+         msgCANDIDATE.dest_id = newPeerId;
+
+         socket.send(JSON.stringify(msgCANDIDATE));
+      }
+  };
+
+  var onOfferSuccess = function(sessionDescription) {
+    trace("onOfferSuccess creating offer");
+
+    var onOfferSetLocalDescriptionSuccess = function() {
+      trace("onOfferSuccess - Set the local description");
+
+      var msgOFFER = {};
+      msgOFFER.msg_type = 'OFFER';
+      msgOFFER.data = sessionDescription;
+      msgOFFER.peer_id = my_id;
+      msgOFFER.dest_id = newPeerId;
+
+      socket.send(JSON.stringify(msgOFFER));  
+    };
+
+    pc.setLocalDescription(sessionDescription, onOfferSetLocalDescriptionSuccess, onSetLocalDescriptionError);
+  };
+
+  var onNegotiationNeeded = function () {
+    pc.createOffer(onOfferSuccess, onOfferFailure);
+  };
+
+  var onDataChannel = function(event) {
+    trace("onDataChannel - Data channel received");
+    var dataChannel = event.channel;
+
+    var onSendChannelStateChange = function(){
+      var readyState = dataChannel.readyState;
+      trace('Send channel state is: ' + readyState);
+    }
+
+    dataChannel.onopen = onSendChannelStateChange;
+    dataChannel.onclose = onSendChannelStateChange;
+    dataChannel.onmessage = onReceiveMessageCallback;
+    peer.dataChannel = dataChannel;
+  };
 
   pc.onicecandidate = onIceCandidate;
   pc.onconnecting   = onSessionConnecting;
@@ -145,8 +139,10 @@ var createPeerConnection = function(connectionId, initiatorFlag) {
   pc.onnegotiationneeded = onNegotiationNeeded;
   pc.ondatachannel = onDataChannel;
 
-  trace("createPeerConnection - Created webkitRTCPeerConnnection " + connectionId);
-}
+  trace("createPeerConnection - Created webkitRTCPeerConnnection " + newPeerId);
+
+  return peer;
+};
 
 // Open a channel towards the Node server
 var openChannel = function () {
@@ -176,9 +172,13 @@ var openChannel = function () {
     socket.onmessage = function (e) {
       var msg = JSON.parse(e.data);
       trace("openChannel Received message type : " + msg.msg_type);
-      trace(msg.msg_type + " - " + JSON.stringify(msg.data);
+      trace(msg.msg_type + " - " + JSON.stringify(msg.data));
 
       switch (msg.msg_type) {
+        case "HANDSHAKE":
+          my_id = msg.data.id;
+
+          break;
         case "GAMEROOMS":
           var game_rooms_response = msg.data;
           var rooms = game_rooms_response.rooms;
@@ -189,51 +189,77 @@ var openChannel = function () {
           }
           break;
 
-        case "ROOMJOINED":
-          var peers = msg.peers;
+        case "PEERCONNECTED":
+          var peer = createPeerConnection(msg.peer_id);
+          
+          peers.push(peer);
 
-          createPeerConnection();
+          trace("Creating data channel for " + peer.id);
 
-          if(peers.length > 0) {
-            trace("Creating data channel");
-            // TOOD: RS - NEED TO CREATE A PEER CONNECTION AND DATACHANNEL FOR EVERY PEER THAT JOINS
-            // Should only be creating on of these for the offering party...
-            dataChannel = pc.createDataChannel("sendDataChannel", 
-                                                 {reliable: false});
-            
-            var dataChannelOpened = function(){
-              trace("Data channel opened");
+          // Should only be creating on of these for the offering party...
+          peer.dataChannel = peer.connection.createDataChannel("sendDataChannel", 
+                                               {reliable: false});
+          
+          var dataChannelOpened = function(){
+            trace("Data channel opened");
 
-              dataChannel.send({data: "Hello world!"});
-            };
-
-            dataChannel.onopen = dataChannelOpened;
-            dataChannel.onclose = onSendChannelStateChange;
-            dataChannel.onmessage = onReceiveMessageCallback;
-          }
+            peer.dataChannel.send({data: "Hello world!"});
+          };
+          
+          var onSendChannelStateChange = function(){
+            var readyState = dataChannel.readyState;
+            trace('Send channel state is: ' + readyState);
+          };
+          
+          peer.dataChannel.onopen = dataChannelOpened;
+          peer.dataChannel.onclose = onSendChannelStateChange;
+          peer.dataChannel.onmessage = onReceiveMessageCallback;
 
           break;
 
         case "OFFER":
+          var peer = createPeerConnection(msg.peer_id);
+          peers.push(peer);
+          
+          var onAnswerSuccess = function(sessionDescription) {
+            trace("onAnswerSuccess creating answer");
+
+            var onAnswerSetLocalDescriptionSuccess = function() {
+              trace("onAnswerSuccess - Set the local description");
+              
+              var msgANSWER = {};
+              msgANSWER.msg_type = 'ANSWER';
+              msgANSWER.data = peer.connection.localDescription;
+              msgANSWER.peer_id = my_id;
+              msgANSWER.dest_id = msg.peer_id;
+
+              socket.send(JSON.stringify(msgANSWER));  
+            }; 
+
+            peer.connection.setLocalDescription(sessionDescription, onAnswerSetLocalDescriptionSuccess, onSetLocalDescriptionError);
+          };
+
           var onSetOfferRemoteSuccess = function(){
             trace("onSetOfferRemoteSuccess set the remote description");
-            
-            pc.createAnswer(onAnswerSuccess, onAnswerFailure);
+
+            peer.connection.createAnswer(onAnswerSuccess, onAnswerFailure);
           };
 
           var remoteDescription = new RTCSessionDescription(msg.data);
-          pc.setRemoteDescription(remoteDescription, onSetOfferRemoteSuccess, onSetRemoteDescriptionError);
+          peer.connection.setRemoteDescription(remoteDescription, onSetOfferRemoteSuccess, onSetRemoteDescriptionError);
           
           break;
 
         case "ANSWER":
           var remoteDescription = new RTCSessionDescription(msg.data);
-          pc.setRemoteDescription(remoteDescription, onSetRemoteDescriptionSuccess, onSetRemoteDescriptionError);
+          var peer = findPeerByID(msg.peer_id);
+          peer.connection.setRemoteDescription(remoteDescription, onSetRemoteDescriptionSuccess, onSetRemoteDescriptionError);
           break;
 
         case "CANDIDATE":
           var candidate = new RTCIceCandidate({sdpMLineIndex:msg.label, candidate: msg.candidate});
-          pc.addIceCandidate(candidate);
+          var peer = findPeerByID(msg.peer_id);
+          peer.connection.addIceCandidate(candidate);
           break;
 
         default:

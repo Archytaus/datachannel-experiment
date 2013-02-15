@@ -51,6 +51,11 @@ wsServer.on('request', function(request) {
         }
     });
     
+    var msg_handshake = {}
+    msg_handshake.msg_type = "HANDSHAKE";
+    msg_handshake.data = {id: cID};
+
+    con.send(JSON.stringify(msg_handshake));
 
     function passMessageToOtherClients(msg) {
       try
@@ -91,18 +96,10 @@ wsServer.on('request', function(request) {
           var room = rooms[roomID];
           
           var response = {}
-          response.msg_type = "ROOMJOINED";
-          response.peers = [];
-          
-          for(var index in room.players)
-          {
-            var player = room.players[index];;
-            response.peers.push({id: player.id})
-          }
+          response.msg_type = "PEERCONNECTED";
+          response.peer_id = cID;
 
-          connection.send(JSON.stringify(response));
-          
-          console.log("Existing players: " + JSON.stringify(response.peers))
+          passMessageToOtherClients(JSON.stringify(response));
 
           room.players.push(client);
           room.player_count += 1;
