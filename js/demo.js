@@ -176,11 +176,10 @@ var openChannel = function () {
     socket.onmessage = function (e) {
       var msg = JSON.parse(e.data);
       trace("openChannel Received message type : " + msg.msg_type);
+      trace(msg.msg_type + " - " + JSON.stringify(msg.data);
 
       switch (msg.msg_type) {
         case "GAMEROOMS":
-          trace("GAMEROOMS request");
-
           var game_rooms_response = msg.data;
           var rooms = game_rooms_response.rooms;
           for(var room_index in rooms)
@@ -191,14 +190,13 @@ var openChannel = function () {
           break;
 
         case "ROOMJOINED":
-          trace("ROOMJOINED request");  
           var peers = msg.peers;
 
           createPeerConnection();
 
           if(peers.length > 0) {
             trace("Creating data channel");
-            // NEED TO CREATE A PEER CONNECTION AND DATACHANNEL FOR EVERY PEER THAT JOINS
+            // TOOD: RS - NEED TO CREATE A PEER CONNECTION AND DATACHANNEL FOR EVERY PEER THAT JOINS
             // Should only be creating on of these for the offering party...
             dataChannel = pc.createDataChannel("sendDataChannel", 
                                                  {reliable: false});
@@ -217,30 +215,23 @@ var openChannel = function () {
           break;
 
         case "OFFER":
-          trace("OFFER - " + msg.data);
-
           var onSetOfferRemoteSuccess = function(){
             trace("onSetOfferRemoteSuccess set the remote description");
-
+            
             pc.createAnswer(onAnswerSuccess, onAnswerFailure);
           };
 
-          //TODO: rs - not working correctly
           var remoteDescription = new RTCSessionDescription(msg.data);
           pc.setRemoteDescription(remoteDescription, onSetOfferRemoteSuccess, onSetRemoteDescriptionError);
           
           break;
 
         case "ANSWER":
-          trace("ANSWER - " + JSON.stringify(msg.data));
-
           var remoteDescription = new RTCSessionDescription(msg.data);
           pc.setRemoteDescription(remoteDescription, onSetRemoteDescriptionSuccess, onSetRemoteDescriptionError);
           break;
 
         case "CANDIDATE":
-          trace("CANDIDATE - " + JSON.stringify(msg));
-
           var candidate = new RTCIceCandidate({sdpMLineIndex:msg.label, candidate: msg.candidate});
           pc.addIceCandidate(candidate);
           break;
