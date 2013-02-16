@@ -6,6 +6,23 @@ var clients = [];
 var rooms = {123: {id: 123, name: "Test Room", capacity: 16, players: [], player_count: 0}};
 var uidCounter = 0;
 
+function findClientByID(id){
+  for(var clientIndex in clients) {
+    var client = clients[clientIndex];
+    if(client.id == id)
+      return client;
+  }
+
+  return undefined;
+}
+
+function sendMessageToClient(id, msg){
+  var client = findClientByID(id);
+  if(client != undefined){
+    client.connection.send(msg);
+  }
+}
+
 var server = http.createServer(function(request, response) {
     console.log((new Date()) + ' Received request for ' + request.url);
     response.writeHead(404);
@@ -107,20 +124,20 @@ wsServer.on('request', function(request) {
           handled = true;
           break;
         case "OFFER":
-          console.log("OFFER sdp section");
+          sendMessageToClient(msg.dest_id, JSON.stringify(msg));
           
-          passMessageToOtherClients(JSON.stringify(msg));
           handled = true;
           break;
         case "CANDIDATE":
-          console.log("CANDIDATE :" + msg.candidate);
-          passMessageToOtherClients(JSON.stringify(msg));
+          sendMessageToClient(msg.dest_id, JSON.stringify(msg));
 
           handled = true;
           break;
         case "ANSWER":
-          passMessageToOtherClients(JSON.stringify(msg));
+          sendMessageToClient(msg.dest_id, JSON.stringify(msg));
+          
           handled = true;
+          break;
         default:
           console.log('Not switched on ' + msg.msg_type);
       }      
