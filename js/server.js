@@ -16,6 +16,17 @@ function findClientByID(id){
   return undefined;
 }
 
+function findClientInRoom(id, roomID){
+  var room = rooms[roomID];
+  for(var clientIndex in room.players) {
+    var client = room.players[clientIndex];
+    if(client.id == id)
+      return client;
+  }
+
+  return undefined;
+}
+
 function sendMessageToClient(id, msg){
   var client = findClientByID(id);
   if(client != undefined){
@@ -90,6 +101,24 @@ wsServer.on('request', function(request) {
       }
     }
 
+    function passMessageToOtherClientsInRoom(roomID, msg) {
+      try
+      {
+        var room = rooms[roomID];
+
+        for(var otherIndex in room.players){ 
+          var otherClient = room.players[otherIndex];
+          if (otherClient.id != cID) {
+            otherClient.connection.send(msg, sendCallback);
+          }
+        }
+      }
+      catch(e)
+      {
+        console.log("Failed to send message: (" + e + ") - " + msg);
+      }
+    }
+
     function processMessageFromClient(connection,message) {
       
       var handled = false;
@@ -108,7 +137,6 @@ wsServer.on('request', function(request) {
           break;
           
         case "JOINROOM":
-          
           var roomID = msg.data.id;
           var room = rooms[roomID];
           
@@ -116,7 +144,7 @@ wsServer.on('request', function(request) {
           response.msg_type = "PEERCONNECTED";
           response.peer_id = cID;
 
-          passMessageToOtherClients(JSON.stringify(response));
+          passMessageToOtherClientsInRoom(roomID, JSON.stringify(response));
 
           room.players.push(client);
           room.player_count += 1;

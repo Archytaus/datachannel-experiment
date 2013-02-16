@@ -18,6 +18,7 @@ var channelReady     = false;
 var socket;
 var peers = [];
 var my_id = 0;
+var my_room_id = 0;
 
 var onSetLocalDescriptionSuccess = function(){
   trace("onSetLocalDescriptionSuccess set the local description");
@@ -210,7 +211,7 @@ var openChannel = function () {
             var readyState = dataChannel.readyState;
             trace('Send channel state is: ' + readyState);
           };
-          
+
           peer.dataChannel.onopen = dataChannelOpened;
           peer.dataChannel.onclose = onSendChannelStateChange;
           peer.dataChannel.onmessage = onReceiveMessageCallback;
@@ -232,7 +233,7 @@ var openChannel = function () {
               msgANSWER.data = peer.connection.localDescription;
               msgANSWER.peer_id = my_id;
               msgANSWER.dest_id = msg.peer_id;
-
+              
               socket.send(JSON.stringify(msgANSWER));  
             }; 
 
@@ -283,6 +284,9 @@ openChannel();
 
 var JoinRoom = function(roomID) {
   trace("JoinRoom start");
+
+  my_room_id = roomID;
+
   var msgREQUEST = {};
   msgREQUEST.msg_type = 'JOINROOM';
   msgREQUEST.data = {id: roomID};
