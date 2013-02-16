@@ -54,10 +54,6 @@ var networkModule = (function () {
       trace("onSessionOpened Session opened");
     };
 
-    var onReceiveMessageCallback = function(event) {
-      trace('Received Message ' + JSON.stringify(event.data));
-    };
-
     this.connectToPeer = function(peerID) {
       var self = this;
       var pc_config = {"iceServers": [{"url": this.stunServer}]};
@@ -84,6 +80,10 @@ var networkModule = (function () {
              };
              self.socket.send(JSON.stringify(msgCANDIDATE));
           }
+      };
+
+      var onReceiveMessageCallback = function(event) {        
+        self.onPeerMessage(JSON.parse(event.data));
       };
 
       var onOfferSuccess = function(sessionDescription) {
@@ -160,16 +160,20 @@ var networkModule = (function () {
             // Should only be creating on of these for the offering party...
             peer.dataChannel = peer.connection.createDataChannel("sendDataChannel", 
                                                  {reliable: false});
-            
+            var self = this;
             var dataChannelOpened = function(){
               trace("Data channel opened");
 
-              peer.dataChannel.send({data: "Hello world!"});
+              self.sendPeers({data: "Hello World!"});
             };
             
             var onSendChannelStateChange = function(){
               var readyState = dataChannel.readyState;
               trace('Send channel state is: ' + readyState);
+            };
+
+            var onReceiveMessageCallback = function(event) {        
+              this.onPeerMessage(JSON.parse(event.data));
             };
 
             peer.dataChannel.onopen = dataChannelOpened;
@@ -270,11 +274,21 @@ var networkModule = (function () {
     };
 
     this.sendPeers = function(msg){
-
+      var msg_to_send = JSON.stringify(msg);
+      
+      for(var peerIndex in this.peers) {
+        var peer = this.peers[peerIndex];
+        peer.dataChannel.send(msg_to_send);
+      }
     };
 
     this.sendPeer = function(peerId, msg){
+      var peer = this.findPeer(peerId);
+      peer.dataChannel.send(JSON.stringify(msg));
+    };
 
+    this.onPeerMessage = function(msg){
+      trace('Received Message ' + JSON.stringify(msg));
     };
   }
 
