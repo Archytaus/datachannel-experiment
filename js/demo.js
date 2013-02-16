@@ -1,4 +1,4 @@
-var networkModule = (function() {
+var networkModule = (function () {
   "use strict";
 
   function CreateConnection(){
@@ -15,8 +15,9 @@ var networkModule = (function() {
     this.findPeer = function(id){
       for(var peerIndex in this.peers) {
         var peer = this.peers[peerIndex];
-        if(peer.id == id)
+        if(peer.id == id){
           return peer;
+        }
       }
       return undefined;
     };
@@ -73,14 +74,14 @@ var networkModule = (function() {
           if (event.candidate) {
              trace("openChannel - Sending ICE candidate to remote peer : " + event.candidate.candidate);
              
-             var msgCANDIDATE = {};
-             msgCANDIDATE.msg_type  = 'CANDIDATE';
-             msgCANDIDATE.candidate = event.candidate.candidate;
-             msgCANDIDATE.id = event.candidate.sdpMid;
-             msgCANDIDATE.label = event.candidate.sdpMLineIndex;
-             msgCANDIDATE.peer_id = self.id;
-             msgCANDIDATE.dest_id = peerID;
-
+             var msgCANDIDATE = {
+               msg_type: 'CANDIDATE',
+               candidate: event.candidate.candidate,
+               id: event.candidate.sdpMid,
+               label: event.candidate.sdpMLineIndex,
+               peer_id: self.id,
+               dest_id: peerID,
+             };
              self.socket.send(JSON.stringify(msgCANDIDATE));
           }
       };
@@ -91,12 +92,12 @@ var networkModule = (function() {
         var onOfferSetLocalDescriptionSuccess = function() {
           trace("onOfferSuccess - Set the local description");
 
-          var msgOFFER = {};
-          msgOFFER.msg_type = 'OFFER';
-          msgOFFER.data = sessionDescription;
-          msgOFFER.peer_id = self.id;
-          msgOFFER.dest_id = peerID;
-
+          var msgOFFER = {
+            msg_type: 'OFFER',
+            data: sessionDescription,
+            peer_id: self.id,
+            dest_id: peerID,
+          };
           self.socket.send(JSON.stringify(msgOFFER));  
         };
 
@@ -189,12 +190,12 @@ var networkModule = (function() {
               var onAnswerSetLocalDescriptionSuccess = function() {
                 trace("onAnswerSuccess - Set the local description");
                 
-                var msgANSWER = {};
-                msgANSWER.msg_type = 'ANSWER';
-                msgANSWER.data = peer.connection.localDescription;
-                msgANSWER.peer_id = self.id;
-                msgANSWER.dest_id = msg.peer_id;
-
+                var msgANSWER = {
+                  msg_type: 'ANSWER',
+                  data: peer.connection.localDescription,
+                  peer_id: self.id,
+                  dest_id: msg.peer_id,
+                };
                 self.socket.send(JSON.stringify(msgANSWER));  
               }; 
 
