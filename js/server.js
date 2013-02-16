@@ -79,7 +79,7 @@ wsServer.on('request', function(request) {
         }
     });
     
-    var msg_handshake = {}
+    var msg_handshake = {};
     msg_handshake.msg_type = "HANDSHAKE";
     msg_handshake.data = {id: cID};
 
@@ -128,7 +128,7 @@ wsServer.on('request', function(request) {
 
       switch(msg.msg_type) {
         case "GAMEROOMS":
-          var response = {}
+          var response = {};
           response.msg_type = "GAMEROOMS";
           response.data = {rooms: rooms};
 
@@ -140,7 +140,7 @@ wsServer.on('request', function(request) {
           var roomID = msg.data.id;
           var room = rooms[roomID];
           
-          var response = {}
+          var response = {};
           response.msg_type = "PEERCONNECTED";
           response.peer_id = cID;
 
