@@ -34,6 +34,10 @@ var startScene = function(){
 
   var scene = new THREE.Scene();
 
+  var world = new CANNON.World();
+  world.gravity.set(0,0,-9.82);
+  world.broadphase = new CANNON.NaiveBroadphase();
+
   // add the camera to the scene
   scene.add(camera);
 
@@ -54,26 +58,33 @@ var startScene = function(){
       segments = 16,
       rings = 16;
 
-  var sphereMaterial =
-  new THREE.MeshLambertMaterial(
+  var sphereMaterial = new THREE.MeshLambertMaterial(
     {
       color: 0xCC0000
     });
 
+  var createEntity = function(entity){
+    entity.mesh = new THREE.Mesh(
+      new THREE.SphereGeometry(radius, segments, rings),
+      sphereMaterial);
+    entity.mesh.useQuaternion = true;
+    
+    // add the sphere to the scene
+    scene.add(entity.mesh);
+
+    // Create a sphere
+    var mass = 5, radius = 1;
+    var sphereShape = new CANNON.Sphere(radius);
+    entity.body = new CANNON.RigidBody(mass, sphereShape);
+    entity.body.position.set(0,0,0);
+    world.add(entity.body);
+  };
+
   // create a new mesh with
   // sphere geometry - we will cover
   // the sphereMaterial next!
-  var player = new THREE.Mesh(
-
-    new THREE.SphereGeometry(
-      radius,
-      segments,
-      rings),
-
-    sphereMaterial);
-
-  // add the sphere to the scene
-  scene.add(player);
+  var player = {};
+  createEntity(player);
 
   // create a point light
   var pointLight =
@@ -88,50 +99,65 @@ var startScene = function(){
   scene.add(pointLight);
 
   network.onPeerConnected = function(peer) {
-    peer.mesh = new THREE.Mesh(
-      new THREE.SphereGeometry(
-        radius,
-        segments,
-        rings),
+    createEntity(peer);
 
-      sphereMaterial);
-
-    // add the sphere to the scene
-    scene.add(peer.mesh);
+    trace("Peer(" + peer.id + ") successfully connected");
   };
 
   network.onPeerMessage = function(msg) {
     switch (msg.msg_type){
-      case "PLAYERPOS":
+      case "PLAYERSTATE":
         var peer = network.findPeer(msg.id);
-        peer.mesh.position = new THREE.Vector3(msg.data.x, msg.data.y, msg.data.z);
+        var state = msg.data;
+        
+        peer.body.position.set(state.position.x, state.position.y, state.position.z);
+        peer.body.velocity.set(state.velocity.x, state.velocity.y, state.velocity.z);
+        
         break;
     };
   };
 
+  setInterval(function(){
+    update();
+
+    world.step(1.0/60.0);
+    
+    sendWorldState();
+
+    render();
+  }, 1000.0/60.0);
+
   var update = function(){
     if( keyboard.pressed("w")){
-      player.position.x += 1;
+      player.body.velocity.z += 1;
     }
     if( keyboard.pressed("s")){
-      player.position.x -= 1;
+      player.body.velocity.z -= 1;
     }
 
-    network.sendPeers({
-      msg_type: "PLAYERPOS", 
-      id: network.id, 
-      data: player.position
-    });
-
-    camera.position = player.position.clone();
-    camera.position.z = player.position.z + 300;
-    
-    renderer.render(scene, camera);  
-
-    requestAnimFrame(update);
+    player.body.position.copy(camera.position);
+    camera.position.z += 300;
+    camera.position.y += 100;
   };
 
-  requestAnimFrame(update);
+  var sendWorldState = function(){
+    network.sendPeers({
+      msg_type: "PLAYERSTATE", 
+      id: network.id, 
+      data: {
+        position: player.body.position,
+        quaternion: player.body.quaternion,
+        velocity: player.body.velocity,
+      }
+    });
+  };
+
+  var render = function() {
+    player.body.position.copy(player.mesh.position);
+    player.body.quaternion.copy(player.mesh.quaternion);
+    
+    renderer.render(scene, camera);
+  };
 };
 
 var JoinRoom = function(roomID) {

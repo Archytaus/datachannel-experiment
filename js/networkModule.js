@@ -178,7 +178,7 @@ var networkModule = (function () {
                 self.onPeerConnected(peer);
               }
             };
-            
+
             var onSendChannelStateChange = function(){
               var readyState = dataChannel.readyState;
               trace('Send channel state is: ' + readyState);
@@ -308,7 +308,7 @@ var networkModule = (function () {
     };
 
     this.onPeerConnected = function(peer){
-
+      trace('Peer' + peer.id + ' connected');
     };
   }
 
