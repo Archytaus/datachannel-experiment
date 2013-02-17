@@ -98,10 +98,10 @@ var startScene = function(){
 
   var update = function(){
     if( keyboard.pressed("w")){
-      player.body.velocity.z += 1;
+      player.body.velocity.z -= 1;
     }
     if( keyboard.pressed("s")){
-      player.body.velocity.z -= 1;
+      player.body.velocity.z += 1;
     }
 
     player.body.position.copy(camera.position);
