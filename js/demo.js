@@ -35,7 +35,7 @@ var startScene = function(){
   var scene = new THREE.Scene();
 
   var world = new CANNON.World();
-  world.gravity.set(0,0,-9.82);
+  world.gravity.set(0,0,0);
   world.broadphase = new CANNON.NaiveBroadphase();
 
   // add the camera to the scene
