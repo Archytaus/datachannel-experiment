@@ -173,7 +173,7 @@ var networkModule = (function () {
             };
 
             var onReceiveMessageCallback = function(event) {        
-              this.onPeerMessage(JSON.parse(event.data));
+              self.onPeerMessage(JSON.parse(event.data));
             };
 
             peer.dataChannel.onopen = dataChannelOpened;
@@ -278,13 +278,17 @@ var networkModule = (function () {
 
       for(var peerIndex in this.peers) {
         var peer = this.peers[peerIndex];
-        peer.dataChannel.send(msg_to_send);
+        if(peer.dataChannel && peer.dataChannel.readyState == "open"){
+          peer.dataChannel.send(msg_to_send);
+        }
       }
     };
 
     this.sendPeer = function(peerId, msg){
       var peer = this.findPeer(peerId);
-      peer.dataChannel.send(JSON.stringify(msg));
+      if(peer.dataChannel && peer.dataChannel.readyState == "open"){
+        peer.dataChannel.send(JSON.stringify(msg));  
+      }
     };
 
     this.onPeerMessage = function(msg){
