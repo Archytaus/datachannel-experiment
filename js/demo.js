@@ -32,14 +32,10 @@ var startScene = function(){
       NEAR,
       FAR);
 
-  var scene = new THREE.Scene();
-
-  var world = new CANNON.World();
-  world.gravity.set(0,0,0);
-  world.broadphase = new CANNON.NaiveBroadphase();
+  var scene = new Scene();
 
   // add the camera to the scene
-  scene.add(camera);
+  scene.addToRenderScene(camera);
 
   // the camera starts at 0,0,0
   // so pull it back
@@ -53,38 +49,11 @@ var startScene = function(){
 
   var keyboard = new THREEx.KeyboardState();
 
-  // set up the sphere vars
-  var radius = 50,
-      segments = 16,
-      rings = 16;
-
-  var sphereMaterial = new THREE.MeshLambertMaterial(
-    {
-      color: 0xCC0000
-    });
-
-  var createEntity = function(entity){
-    entity.mesh = new THREE.Mesh(
-      new THREE.SphereGeometry(radius, segments, rings),
-      sphereMaterial);
-    entity.mesh.useQuaternion = true;
-    
-    // add the sphere to the scene
-    scene.add(entity.mesh);
-
-    // Create a sphere
-    var mass = 5, radius = 1;
-    var sphereShape = new CANNON.Sphere(radius);
-    entity.body = new CANNON.RigidBody(mass, sphereShape);
-    entity.body.position.set(0,0,0);
-    world.add(entity.body);
-  };
-
   // create a new mesh with
   // sphere geometry - we will cover
   // the sphereMaterial next!
-  var player = {};
-  createEntity(player);
+  var player = new Entity();
+  player.createDummy(scene);
 
   // create a point light
   var pointLight =
@@ -96,10 +65,11 @@ var startScene = function(){
   pointLight.position.z = 130;
 
   // add to the scene
-  scene.add(pointLight);
+  scene.addToRenderScene(pointLight);
 
   network.onPeerConnected = function(peer) {
-    createEntity(peer);
+    peer.entity = new Entity();
+    peer.entity.createDummy(scene);
 
     trace("Peer(" + peer.id + ") successfully connected");
   };
@@ -110,8 +80,7 @@ var startScene = function(){
         var peer = network.findPeer(msg.id);
         var state = msg.data;
         
-        peer.body.position.set(state.position.x, state.position.y, state.position.z);
-        peer.body.velocity.set(state.velocity.x, state.velocity.y, state.velocity.z);
+        peer.entity.setFromNetworkState(state);
         
         break;
     };
@@ -120,8 +89,8 @@ var startScene = function(){
   setInterval(function(){
     update();
 
-    world.step(1.0/60.0);
-    
+    scene.update();
+
     sendWorldState();
 
     render();
@@ -144,19 +113,14 @@ var startScene = function(){
     network.sendPeers({
       msg_type: "PLAYERSTATE", 
       id: network.id, 
-      data: {
-        position: player.body.position,
-        quaternion: player.body.quaternion,
-        velocity: player.body.velocity,
-      }
+      data: player.networkState(),
     });
   };
 
   var render = function() {
-    player.body.position.copy(player.mesh.position);
-    player.body.quaternion.copy(player.mesh.quaternion);
-    
-    renderer.render(scene, camera);
+    scene.preRender();
+
+    renderer.render(scene.scene, camera);
   };
 };
 

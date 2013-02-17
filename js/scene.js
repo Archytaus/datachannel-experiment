@@ -3,36 +3,41 @@ function Scene() {
   this.world = new CANNON.World();
   this.entities = [];
   var uIDCounter = 0;
-  
-  world.broadphase = new CANNON.NaiveBroadphase();
+
+  this.world.broadphase = new CANNON.NaiveBroadphase();
 
   this.addToPhysicsWorld = function(obj){
-    world.add(obj);
+    this.world.add(obj);
   };
 
   this.addToRenderScene = function(obj){
-    scene.add(obj);
+    this.scene.add(obj);
   };
 
   this.addEntity = function(entity){
     this.entities.push(entity);
-    addToRenderScene(entity.mesh);
-    addToPhysicsWorld(entity.body);
+    this.addToRenderScene(entity.mesh);
+    this.addToPhysicsWorld(entity.body);
   };
 
   this.preRender = function(){
-    _.each(entities, function(entity) {
+    _.each(this.entities, function(entity) {
       if(entity.preRender){
         entity.preRender();
       }
     });
   };
 
-  this.update = function(){
-    _.each(entities, function(entity) {
+  this.preUpdate = function(){
+    _.each(this.entities, function(entity) {
       if(entity.update){
         entity.update();
       }
     });
+  };
+
+  this.update = function(){
+    this.preUpdate();
+    this.world.step(1.0/60.0);
   };
 }
