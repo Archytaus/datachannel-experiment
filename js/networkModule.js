@@ -112,12 +112,18 @@ var networkModule = (function () {
         trace("onDataChannel - Data channel received");
         var dataChannel = event.channel;
 
+        var onChannelOpen = function(){
+          if(self.onPeerConnected){
+            self.onPeerConnected(peer);
+          }
+        };
+
         var onSendChannelStateChange = function(){
           var readyState = dataChannel.readyState;
           trace('Send channel state is: ' + readyState);
         }
 
-        dataChannel.onopen = onSendChannelStateChange;
+        dataChannel.onopen = onChannelOpen;
         dataChannel.onclose = onSendChannelStateChange;
         dataChannel.onmessage = onReceiveMessageCallback;
         peer.dataChannel = dataChannel;
@@ -167,6 +173,12 @@ var networkModule = (function () {
               self.sendPeers({data: "Hello World!"});
             };
             
+            var onChannelOpen = function(){
+              if(self.onPeerConnected){
+                self.onPeerConnected(peer);
+              }
+            };
+            
             var onSendChannelStateChange = function(){
               var readyState = dataChannel.readyState;
               trace('Send channel state is: ' + readyState);
@@ -176,7 +188,7 @@ var networkModule = (function () {
               self.onPeerMessage(JSON.parse(event.data));
             };
 
-            peer.dataChannel.onopen = dataChannelOpened;
+            peer.dataChannel.onopen = onChannelOpen;
             peer.dataChannel.onclose = onSendChannelStateChange;
             peer.dataChannel.onmessage = onReceiveMessageCallback;
 
@@ -293,6 +305,10 @@ var networkModule = (function () {
 
     this.onPeerMessage = function(msg){
       trace('Received Message ' + JSON.stringify(msg));
+    };
+
+    this.onPeerConnected = function(peer){
+
     };
   }
 

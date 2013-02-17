@@ -87,6 +87,28 @@ var startScene = function(){
   // add to the scene
   scene.add(pointLight);
 
+  network.onPeerConnected = function(peer) {
+    peer.mesh = new THREE.Mesh(
+      new THREE.SphereGeometry(
+        radius,
+        segments,
+        rings),
+
+      sphereMaterial);
+
+    // add the sphere to the scene
+    scene.add(peer.mesh);
+  };
+
+  network.onPeerMessage = function(msg) {
+    switch (msg.msg_type){
+      case "PLAYERPOS":
+        var peer = network.findPeer(msg.id);
+        peer.mesh.position = new THREE.Vector3(msg.data.x, msg.data.y, msg.data.z);
+        break;
+    };
+  };
+
   var update = function(){
     if( keyboard.pressed("w")){
       player.position.x += 1;
@@ -95,7 +117,11 @@ var startScene = function(){
       player.position.x -= 1;
     }
 
-    network.sendPeers({data: player.position});
+    network.sendPeers({
+      msg_type: "PLAYERPOS", 
+      id: network.id, 
+      data: player.position
+    });
 
     camera.position = player.position.clone();
     camera.position.z = player.position.z + 300;
