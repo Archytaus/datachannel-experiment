@@ -140,11 +140,21 @@ wsServer.on('request', function(request) {
           var roomID = msg.data.id;
           var room = rooms[roomID];
           
-          var response = {};
-          response.msg_type = "PEERCONNECTED";
-          response.peer_id = cID;
+          if(room.host_id == undefined){
+            room.host_id = cID;
+          }
 
-          passMessageToOtherClientsInRoom(roomID, JSON.stringify(response));
+          var msgNewPeer = {
+            msg_type: "PEERCONNECTED",
+            peer_id: cID,
+          };
+          passMessageToOtherClientsInRoom(roomID, JSON.stringify(msgNewPeer));
+
+          var msgRoomInfo = {
+            msg_type: "ROOMINFO",
+            data: {host_id: room.host_id}
+          };
+          sendMessageToClient(cID, JSON.stringify(msgRoomInfo));
 
           room.players.push(client);
           room.player_count += 1;
@@ -173,7 +183,6 @@ wsServer.on('request', function(request) {
       if (!handled){
         passMessageToOtherClients(JSON.stringify(msg));
       }
-
     }
    
     con.on('close', function(reasonCode, description) {

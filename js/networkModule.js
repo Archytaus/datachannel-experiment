@@ -8,6 +8,7 @@ var networkModule = (function () {
     this.stunServer       = "stun:stun.l.google.com:19302";
     this.peers = [];
 
+    this.host_id = undefined;
     this.id = undefined;
     this.room_id = undefined;
     this.socket = undefined;
@@ -22,6 +23,10 @@ var networkModule = (function () {
       return undefined;
     };
 
+    this.isHost = function(){
+      return this.host_id === this.id;
+    };
+    
     var onSetLocalDescriptionSuccess = function(){
       trace("onSetLocalDescriptionSuccess set the local description");
     };
@@ -154,6 +159,10 @@ var networkModule = (function () {
               var room = rooms[room_index];
               $('#game_rooms tbody').append("<tr><td onclick='JoinRoom(" + room.id + ")'>" + room.name + "</td><td>" + room.player_count + " / " + room.capacity + "</td></tr>");
             }
+            break;
+
+          case "ROOMINFO":
+            this.host_id = msg.data.host_id;
             break;
 
           case "PEERCONNECTED":
