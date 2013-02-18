@@ -8,6 +8,20 @@ var requestGameRooms = function() {
   });
 };
 
+var randomInRange = function(min, max){
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+};
+
+var initializeWorld = function(scene) {
+  for(var i = 0; i < 30; i++){
+    var asteroid = new Entity();
+    asteroid.createDummy(scene);
+    asteroid.body.position.set(randomInRange(-300, 300), 
+      randomInRange(-300, 300), 
+      randomInRange(-300, 300));
+  }
+};
+
 var startScene = function(){
   $('#game_rooms').remove();
   var container = $('#scene');
@@ -85,6 +99,8 @@ var startScene = function(){
         break;
     };
   };
+
+  initializeWorld(scene);
 
   setInterval(function(){
     update();
