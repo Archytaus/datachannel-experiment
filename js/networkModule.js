@@ -62,6 +62,37 @@ var networkModule = (function () {
       trace("onSessionOpened Session opened");
     };
 
+    this.onReceiveMessageCallback = function(event) {        
+      var msg = JSON.parse(event.data);
+
+      if(peerMessageCallback.hasOwnProperty(msg.msg_type)){
+        for (var i = peerMessageCallback[msg.msg_type].length - 1; i >= 0; i--) {
+          peerMessageCallback[msg.msg_type][i].call(this, msg);
+        };
+      }
+    };
+
+    this.onChannelOpen = function(event, peer) {
+      if(this.onPeerConnected){
+        this.onPeerConnected(peer);
+      }
+    };
+
+    this.onChannelClosed = function(event, peer) {
+      if(this.onPeerDisconnected){
+        this.onPeerDisconnected(peer);
+      }
+    };
+
+    this.prepareDataChannel = function(dataChannel, peer) {
+      var self = this;
+      dataChannel.onopen = function(event) { self.onChannelOpen(event, peer); };
+      dataChannel.onclose = function(event) { self.onChannelClosed(event, peer); };
+      dataChannel.onmessage = this.onReceiveMessageCallback;
+
+      peer.dataChannel = dataChannel;
+    };
+
     this.connectToPeer = function(peerID) {
       var self = this;
       var pc_config = {"iceServers": [{"url": this.stunServer}]};
@@ -90,16 +121,6 @@ var networkModule = (function () {
           }
       };
 
-      this.onReceiveMessageCallback = function(event) {        
-        var msg = JSON.parse(event.data);
-
-        if(peerMessageCallback.hasOwnProperty(msg.msg_type)){
-          for (var i = peerMessageCallback[msg.msg_type].length - 1; i >= 0; i--) {
-            peerMessageCallback[msg.msg_type][i].call(this, msg);
-          };
-        }
-      };
-
       var onOfferSuccess = function(sessionDescription) {
         trace("onOfferSuccess creating offer");
 
@@ -126,21 +147,7 @@ var networkModule = (function () {
         trace("onDataChannel - Data channel received");
         var dataChannel = event.channel;
 
-        var onChannelOpen = function(){
-          if(self.onPeerConnected){
-            self.onPeerConnected(peer);
-          }
-        };
-
-        var onSendChannelStateChange = function(){
-          var readyState = dataChannel.readyState;
-          trace('Send channel state is: ' + readyState);
-        }
-
-        dataChannel.onopen = onChannelOpen;
-        dataChannel.onclose = onSendChannelStateChange;
-        dataChannel.onmessage = self.onReceiveMessageCallback;
-        peer.dataChannel = dataChannel;
+        self.prepareDataChannel(dataChannel, peer);
       };
 
       pc.onicecandidate = onIceCandidate;
@@ -181,31 +188,11 @@ var networkModule = (function () {
 
             trace("Creating data channel for " + peer.id);
 
-            // Should only be creating on of these for the offering party...
-            peer.dataChannel = peer.connection.createDataChannel("sendDataChannel", 
+            var dataChannel = peer.connection.createDataChannel("sendDataChannel", 
                                                  {reliable: false});
-            var self = this;
-            var dataChannelOpened = function(){
-              trace("Data channel opened");
 
-              self.sendPeers({data: "Hello World!"});
-            };
+            this.prepareDataChannel(dataChannel, peer);
             
-            var onChannelOpen = function(){
-              if(self.onPeerConnected){
-                self.onPeerConnected(peer);
-              }
-            };
-
-            var onSendChannelStateChange = function(){
-              var readyState = dataChannel.readyState;
-              trace('Send channel state is: ' + readyState);
-            };
-
-            peer.dataChannel.onopen = onChannelOpen;
-            peer.dataChannel.onclose = onSendChannelStateChange;
-            peer.dataChannel.onmessage = this.onReceiveMessageCallback;
-
             break;
 
           case "OFFER":
