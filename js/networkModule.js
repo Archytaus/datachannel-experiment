@@ -192,7 +192,7 @@ var networkModule = (function () {
                                                  {reliable: false});
 
             this.prepareDataChannel(dataChannel, peer);
-            
+
             break;
 
           case "OFFER":
@@ -319,6 +319,10 @@ var networkModule = (function () {
 
     this.onPeerConnected = function(peer){
       trace('Peer' + peer.id + ' connected');
+    };
+
+    this.onPeerDisconnected = function(peer){
+      trace('Peer' + peer.id + ' disconnected');
     };
 
     this.onServerMessage = function(msg_type, callback){
