@@ -88,19 +88,10 @@ var startScene = function(){
     trace("Peer(" + peer.id + ") successfully connected");
   };
 
-  network.onPeerMessage = function(msg) {
-    switch (msg.msg_type){
-      case "PLAYERSTATE":
-        var peer = network.findPeer(msg.id);
-        var state = msg.data;
-        
-        peer.entity.setFromNetworkState(state);
-        
-        break;
-    };
-  };
-
-  initializeWorld(scene);
+  network.onPeerMessage('PLAYERSTATE', function(msg) {
+    var peer = network.findPeer(msg.id);
+    peer.entity.setFromNetworkState(msg.data);
+  });
 
   setInterval(function(){
     update();
@@ -132,12 +123,14 @@ var startScene = function(){
       data: player.networkState(),
     });
   };
-
+  
   var render = function() {
     scene.preRender();
 
     renderer.render(scene.scene, camera);
   };
+
+  return scene;
 };
 
 var JoinRoom = function(roomID) {
@@ -150,5 +143,11 @@ var JoinRoom = function(roomID) {
     data: {id: roomID}
   });
 
-  startScene();
+  network.onServerMessage('ROOMINFO', function(msg){
+    var scene = startScene();
+
+    if(network.isHost()){
+      initializeWorld(scene);
+    }
+  });
 };

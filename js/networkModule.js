@@ -13,6 +13,9 @@ var networkModule = (function () {
     this.room_id = undefined;
     this.socket = undefined;
 
+    var serverMessageCallback = {};
+    var peerMessageCallback = {};
+
     this.findPeer = function(id){
       for(var peerIndex in this.peers) {
         var peer = this.peers[peerIndex];
@@ -87,8 +90,14 @@ var networkModule = (function () {
           }
       };
 
-      var onReceiveMessageCallback = function(event) {        
-        self.onPeerMessage(JSON.parse(event.data));
+      this.onReceiveMessageCallback = function(event) {        
+        var msg = JSON.parse(event.data);
+
+        if(peerMessageCallback.hasOwnProperty(msg.msg_type)){
+          for (var i = peerMessageCallback[msg.msg_type].length - 1; i >= 0; i--) {
+            peerMessageCallback[msg.msg_type][i].call(this, msg);
+          };
+        }
       };
 
       var onOfferSuccess = function(sessionDescription) {
@@ -130,7 +139,7 @@ var networkModule = (function () {
 
         dataChannel.onopen = onChannelOpen;
         dataChannel.onclose = onSendChannelStateChange;
-        dataChannel.onmessage = onReceiveMessageCallback;
+        dataChannel.onmessage = self.onReceiveMessageCallback;
         peer.dataChannel = dataChannel;
       };
 
@@ -193,13 +202,9 @@ var networkModule = (function () {
               trace('Send channel state is: ' + readyState);
             };
 
-            var onReceiveMessageCallback = function(event) {        
-              self.onPeerMessage(JSON.parse(event.data));
-            };
-
             peer.dataChannel.onopen = onChannelOpen;
             peer.dataChannel.onclose = onSendChannelStateChange;
-            peer.dataChannel.onmessage = onReceiveMessageCallback;
+            peer.dataChannel.onmessage = this.onReceiveMessageCallback;
 
             break;
 
@@ -253,6 +258,12 @@ var networkModule = (function () {
           default:
             // Unexpected, but reserved for other message types
             trace("openChannel unknown message " + msg.msg_type);
+        }
+
+        if(serverMessageCallback.hasOwnProperty(msg.msg_type)){
+          for (var i = serverMessageCallback[msg.msg_type].length - 1; i >= 0; i--) {
+            serverMessageCallback[msg.msg_type][i].call(this, msg);
+          };
         }
     };
 
@@ -312,12 +323,22 @@ var networkModule = (function () {
       }
     };
 
-    this.onPeerMessage = function(msg){
-      trace('Received Message ' + JSON.stringify(msg));
+    this.onPeerMessage = function(msg_type, callback){
+      if(!peerMessageCallback.hasOwnProperty(msg_type)){
+        peerMessageCallback[msg_type] = [];
+      }
+      peerMessageCallback[msg_type].push(callback);
     };
 
     this.onPeerConnected = function(peer){
       trace('Peer' + peer.id + ' connected');
+    };
+
+    this.onServerMessage = function(msg_type, callback){
+      if(!serverMessageCallback.hasOwnProperty(msg_type)){
+        serverMessageCallback[msg_type] = [];
+      }
+      serverMessageCallback[msg_type].push(callback);
     };
   }
 
