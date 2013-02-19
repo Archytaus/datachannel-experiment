@@ -13,8 +13,8 @@ var randomInRange = function(min, max){
 };
 
 var initializeWorld = function(scene) {
-  for(var i = 0; i < 30; i++){
-    var asteroid = new Entity();
+  for(var i = 0; i < 5; i++){
+    var asteroid = new Entity(network.id);
     asteroid.createDummy(scene);
     asteroid.body.position.set(randomInRange(-300, 300), 
       randomInRange(-300, 300), 
@@ -46,7 +46,7 @@ var startScene = function(){
       NEAR,
       FAR);
 
-  var scene = new Scene();
+  var scene = new Scene(network.id);
 
   // add the camera to the scene
   scene.addToRenderScene(camera);
@@ -66,7 +66,7 @@ var startScene = function(){
   // create a new mesh with
   // sphere geometry - we will cover
   // the sphereMaterial next!
-  var player = new Entity();
+  var player = new Entity(network.id);
   player.createDummy(scene);
 
   // create a point light
@@ -82,16 +82,20 @@ var startScene = function(){
   scene.addToRenderScene(pointLight);
 
   network.onPeerConnected = function(peer) {
-    peer.entity = new Entity();
+    peer.entity = new Entity(peer.id);
     peer.entity.createDummy(scene);
 
     trace("Peer(" + peer.id + ") successfully connected");
   };
 
-  network.onPeerMessage('PLAYERSTATE', function(msg) {
-    var peer = network.findPeer(msg.id);
-    peer.entity.setFromNetworkState(msg.data);
+  network.onPeerMessage('WORLDSTATE', function(msg) {
+    scene.updateWorldState(msg.data);
   });
+
+  // network.onPeerMessage('PLAYERSTATE', function(msg) {
+  //   var peer = network.findPeer(msg.id);
+  //   peer.entity.setFromNetworkState(msg.data);
+  // });
 
   setInterval(function(){
     update();
@@ -118,12 +122,12 @@ var startScene = function(){
 
   var sendWorldState = function(){
     network.sendPeers({
-      msg_type: "PLAYERSTATE", 
+      msg_type: "WORLDSTATE", 
       id: network.id, 
-      data: player.networkState(),
+      data: scene.getWorldState(),
     });
   };
-  
+
   var render = function() {
     scene.preRender();
 
@@ -144,6 +148,8 @@ var JoinRoom = function(roomID) {
   });
 
   network.onServerMessage('ROOMINFO', function(msg){
+    setCounterStart(network.id * 100);
+
     var scene = startScene();
 
     if(network.isHost()){

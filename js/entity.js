@@ -1,15 +1,21 @@
-function Entity() {
+var uIDCounterStart = 0;
+
+function setCounterStart(newStart) {
+  uIDCounterStart = newStart;
+}
+
+function Entity(owner_id) {
   this.body = undefined;
   this.mesh = undefined;
-  this.id = undefined;
+  this.id = uIDCounterStart++;
+  this.owner_id = owner_id;
 
   this.preRender = function(){
     this.body.position.copy(this.mesh.position);
     this.body.quaternion.copy(this.mesh.quaternion);
   };
-
+  
   this.update = function(){
-
   };
 
   this.setFromNetworkState = function(state){
@@ -20,10 +26,20 @@ function Entity() {
 
   this.networkState = function(){
     return {
+        id: this.id,
+        owner_id: this.owner_id,
         position: this.body.position,
         quaternion: this.body.quaternion,
         velocity: this.body.velocity
       };
+  };
+  
+  this.createDummyFromState = function(scene, state) {
+    this.id = state.id;
+    this.owner_id = state.owner_id;
+
+    this.createDummy(scene);
+    this.setFromNetworkState(state);
   };
 
   this.createDummy = function(scene) {
