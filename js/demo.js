@@ -108,16 +108,33 @@ var startScene = function(){
   }, 1000.0/60.0);
 
   var update = function(){
+    var moveDirection = new CANNON.Vec3();
+
     if( keyboard.pressed("w")){
-      player.body.velocity.z -= 1;
+      moveDirection.z -= 500;
     }
     if( keyboard.pressed("s")){
-      player.body.velocity.z += 1;
+      moveDirection.z += 500;
     }
 
+    if( keyboard.pressed("d")){
+      player.body.angularVelocity.y -= 0.01;
+    }
+    
+    if( keyboard.pressed("a")){
+      player.body.angularVelocity.y += 0.01;
+    }
+
+    var worldDirection = player.body.quaternion.vmult(moveDirection);
+    player.body.force = worldDirection;
+
     player.body.position.copy(camera.position);
-    camera.position.z += 300;
-    camera.position.y += 100;
+
+    var cameraOffset = new CANNON.Vec3(0, 100, 300);
+    var cameraWorldOffset = player.body.quaternion.vmult(cameraOffset);
+    camera.position.add(cameraWorldOffset);
+    camera.lookAt(player.body.position);
+
   };
 
   var sendWorldState = function(){
