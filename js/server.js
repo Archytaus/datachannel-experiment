@@ -6,6 +6,12 @@ var clients = [];
 var rooms = {123: {id: 123, name: "Test Room", capacity: 16, players: [], player_count: 0}};
 var uidCounter = 0;
 
+Array.prototype.remove = function(from, to){
+  var rest = this.slice((to || from) + 1 || this.length);
+  this.length = from < 0 ? this.length + from : from;
+  return this.push.apply(this, rest);
+};
+
 function findClientByID(id){
   for(var clientIndex in clients) {
     var client = clients[clientIndex];
@@ -184,19 +190,29 @@ wsServer.on('request', function(request) {
         passMessageToOtherClients(JSON.stringify(msg));
       }
     }
-   
+    
     con.on('close', function(reasonCode, description) {
-        console.log((new Date()) + ' Peer ' + con.remoteAddress + ' disconnected.');
+        console.log((new Date()) + ' Peer ' + cID + " (" + con.remoteAddress + ') disconnected.');
 
-        delete clients[cID];
+        clients.remove(clients.indexOf(client));
 
         for(var roomID in rooms)
         {
           var room = rooms[roomID];
-          if(room.hasOwnProperty(cID))
+          if(room.players.indexOf(client) != -1)
           {
             room.player_count -= 1;
-            delete room.players[cID];
+            room.players.remove(room.players.indexOf(client));
+
+            if(cID == room.host_id){
+
+              // Create a new host id
+              room.host_id = undefined;
+
+              if(room.player_count > 0){
+                room.host_id = room.players[0];
+              }
+            }
           }
         }
     });
