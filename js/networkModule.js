@@ -17,8 +17,9 @@ var networkModule = (function () {
     var peerMessageCallback = {};
 
     this.findPeer = function(id){
-      for(var peerIndex in this.peers) {
-        var peer = this.peers[peerIndex];
+
+      for (var i = 0; i < this.peers.length; i++) {
+        var peer = this.peers[i];
         if(peer.id == id){
           return peer;
         }
@@ -267,7 +268,10 @@ var networkModule = (function () {
       this.socket.onopen = function () {
         trace("openChannel Channel opened.");
         
-        requestGameRooms();
+        self.onServerConnected();
+        if(self.onServerConnected != undefined){
+          
+        }
       };
 
       this.socket.onerror = function (error) {
@@ -295,8 +299,8 @@ var networkModule = (function () {
     this.sendPeers = function(msg){
       var msg_to_send = JSON.stringify(msg);
 
-      for(var peerIndex in this.peers) {
-        var peer = this.peers[peerIndex];
+      for (var i = 0; i < this.peers.length; i++) {
+        var peer = this.peers[i];
         if(peer.dataChannel && peer.dataChannel.readyState == "open"){
           peer.dataChannel.send(msg_to_send);
         }
@@ -323,6 +327,10 @@ var networkModule = (function () {
 
     this.onPeerDisconnected = function(peer){
       trace('Peer' + peer.id + ' disconnected');
+    };
+
+    this.onServerConnected = function(){
+      trace('Connected to the server');
     };
 
     this.onServerMessage = function(msg_type, callback){

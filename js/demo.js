@@ -1,12 +1,12 @@
-var network = networkModule.connect();
-network.connectToServer("127.0.0.1", "8080");
+Space.network = networkModule.connect();
 
-var requestGameRooms = function() {
-  trace("requestGameRooms start");
-  network.sendServer({
+Space.network.onServerConnected = function(){
+  Space.network.sendServer({
     msg_type: 'GAMEROOMS'
   });
 };
+
+Space.network.connectToServer("127.0.0.1", "8080");
 
 var randomInRange = function(min, max){
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -14,7 +14,7 @@ var randomInRange = function(min, max){
 
 var initializeWorld = function(scene) {
   for(var i = 0; i < 5; i++){
-    var asteroid = new Entity(network.id);
+    var asteroid = new Entity(Space.network.id);
     asteroid.createDummy(scene);
     asteroid.body.position.set(randomInRange(-300, 300), 
       randomInRange(-300, 300), 
@@ -46,7 +46,7 @@ var startScene = function(){
       NEAR,
       FAR);
 
-  var scene = new Scene(network.id);
+  var scene = new Scene(Space.network.id);
 
   // add the camera to the scene
   scene.addToRenderScene(camera);
@@ -66,7 +66,7 @@ var startScene = function(){
   // create a new mesh with
   // sphere geometry - we will cover
   // the sphereMaterial next!
-  var player = new Entity(network.id);
+  var player = new Entity(Space.network.id);
   player.createDummy(scene);
 
   // create a point light
@@ -81,21 +81,16 @@ var startScene = function(){
   // add to the scene
   scene.addToRenderScene(pointLight);
 
-  network.onPeerConnected = function(peer) {
+  Space.network.onPeerConnected = function(peer) {
     peer.entity = new Entity(peer.id);
     peer.entity.createDummy(scene);
 
     trace("Peer(" + peer.id + ") successfully connected");
   };
 
-  network.onPeerMessage('WORLDSTATE', function(msg) {
+  Space.network.onPeerMessage('WORLDSTATE', function(msg) {
     scene.updateWorldState(msg.data);
   });
-
-  // network.onPeerMessage('PLAYERSTATE', function(msg) {
-  //   var peer = network.findPeer(msg.id);
-  //   peer.entity.setFromNetworkState(msg.data);
-  // });
 
   setInterval(function(){
     update();
@@ -138,9 +133,9 @@ var startScene = function(){
   };
 
   var sendWorldState = function(){
-    network.sendPeers({
+    Space.network.sendPeers({
       msg_type: "WORLDSTATE", 
-      id: network.id, 
+      id: Space.network.id, 
       data: scene.getWorldState(),
     });
   };
@@ -157,19 +152,19 @@ var startScene = function(){
 var JoinRoom = function(roomID) {
   trace("JoinRoom start");
 
-  network.room_id = roomID;
+  Space.network.room_id = roomID;
 
-  network.sendServer({
+  Space.network.sendServer({
     msg_type: 'JOINROOM', 
     data: {id: roomID}
   });
 
-  network.onServerMessage('ROOMINFO', function(msg){
-    setCounterStart(network.id * 100);
+  Space.network.onServerMessage('ROOMINFO', function(msg){
+    setCounterStart(Space.network.id * 100);
 
     var scene = startScene();
 
-    if(network.isHost()){
+    if(Space.network.isHost()){
       initializeWorld(scene);
     }
   });
