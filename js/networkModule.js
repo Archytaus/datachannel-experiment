@@ -168,16 +168,7 @@ var networkModule = (function () {
             this.id = msg.data.id;
 
             break;
-          case "GAMEROOMS":
-            var game_rooms_response = msg.data;
-            var rooms = game_rooms_response.rooms;
-            for(var room_index in rooms)
-            {
-              var room = rooms[room_index];
-              $('#game_rooms tbody').append("<tr><td onclick='JoinRoom(" + room.id + ")'>" + room.name + "</td><td>" + room.player_count + " / " + room.capacity + "</td></tr>");
-            }
-            break;
-
+            
           case "ROOMINFO":
             this.host_id = msg.data.host_id;
             break;

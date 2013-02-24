@@ -6,6 +6,16 @@ Space.network.onServerConnected = function(){
   });
 };
 
+Space.network.onServerMessage('GAMEROOMS', function(msg){
+  var game_rooms_response = msg.data;
+  var rooms = game_rooms_response.rooms;
+
+  for(var room_index in rooms) {
+    var room = rooms[room_index];
+    $('#game_rooms tbody').append("<tr><td onclick='JoinRoom(" + room.id + ")'>" + room.name + "</td><td>" + room.player_count + " / " + room.capacity + "</td></tr>");
+  }
+});
+
 Space.network.connectToServer("127.0.0.1", "8080");
 
 var randomInRange = function(min, max){
