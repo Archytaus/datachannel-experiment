@@ -11,8 +11,15 @@ Space.network.onServerMessage('GAMEROOMS', function(msg){
   var rooms = game_rooms_response.rooms;
 
   for(var room_index in rooms) {
-    var room = rooms[room_index];
-    $('#game_rooms tbody').append("<tr><td onclick='JoinRoom(" + room.id + ")'>" + room.name + "</td><td>" + room.player_count + " / " + room.capacity + "</td></tr>");
+    var roomInfo = rooms[room_index];
+
+    var room = Space.Room.create({
+      id: roomInfo.id,
+      name: roomInfo.name,
+      player_count: roomInfo.player_count,
+      capacity: roomInfo.capacity,
+    });
+    Space.RoomsController.pushObject(room);
   }
 });
 
@@ -159,7 +166,7 @@ var startScene = function(){
   return scene;
 };
 
-var JoinRoom = function(roomID) {
+Space.JoinRoom = function(roomID) {
   trace("JoinRoom start");
 
   Space.network.room_id = roomID;

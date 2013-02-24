@@ -4,30 +4,38 @@
     <meta name="viewport" 
       content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Data Channel Experiment</title>
-    
-    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-    <script src="http://cloud.github.com/downloads/emberjs/ember.js/ember-0.9.6.min.js"></script>
-    <script src="js/ember-app.js"></script>
-
   </head>
   <body>
     <h1>Data Channel Experiment</h1>
     
-    <table id="game_rooms">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Capacity</th>
-        </tr>
-      </thead>
-      <tbody>
+    <script type="text/x-handlebars" data-template-name="application">
+      <table id="game_rooms">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Capacity</th>
+          </tr>
+        </thead>
+        <tbody>
 
-      </tbody>
-    </table>
-    
+          {{#each room in Space.RoomsController}}
+            <tr>
+              <td {{action joinRoom room target="Space.RoomsController"}}>{{room.name}}</td>
+              <td>{{room.player_count}} / {{room.capacity}}</td>
+            </tr>
+          {{/each}}
+        
+        </tbody>
+      </table>
+    </script>
+
     <div id="scene"></div>
     
     <script type="text/javascript" src="./js/lib/jquery-1.9.1.min.js"></script>
+    <script type="text/javascript" src="./js/lib/handlebars.js"></script>
+    <script type="text/javascript" src="./js/lib/ember-1.0.0-rc.1.js"></script>
+    <script src="js/ember-app.js"></script>
+    
     <script type="text/javascript" src="./js/lib/underscore.js"></script>
     <script type="text/javascript" src="./js/lib/three.min.js"></script>
     <script type="text/javascript" src='./js/lib/THREEx.KeyboardState.js'></script>

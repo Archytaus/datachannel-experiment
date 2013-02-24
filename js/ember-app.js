@@ -11,4 +11,9 @@ Space.Room = Ember.Object.extend({
 
 Space.RoomsController = Ember.ArrayController.create({
   content: [],
+  joinRoom: function(room){
+    console.log("Joining room: " + room.id);
+
+    Space.JoinRoom(room.id);
+  },
 });
