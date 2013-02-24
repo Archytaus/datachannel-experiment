@@ -12,9 +12,9 @@ Array.prototype.remove = function(from, to){
   return this.push.apply(this, rest);
 };
 
-function findClientByID(id){
-  for(var clientIndex in clients) {
-    var client = clients[clientIndex];
+function findClientByID(id) {
+  for (var i = 0; i < clients.length; i++) {
+    var client = clients[i];
     if(client.id == id)
       return client;
   }
@@ -24,8 +24,8 @@ function findClientByID(id){
 
 function findClientInRoom(id, roomID){
   var room = rooms[roomID];
-  for(var clientIndex in room.players) {
-    var client = room.players[clientIndex];
+  for (var i = 0; i < room.players.length; i++) {
+    var client = room.players[i];
     if(client.id == id)
       return client;
   }
@@ -60,6 +60,7 @@ var roomReplacer = function(key, value){
   if(key == "players"){
     return undefined;
   }
+  
   return value;
 };
 
@@ -94,8 +95,8 @@ wsServer.on('request', function(request) {
     function passMessageToOtherClients(msg) {
       try
       {
-        for(var otherIndex in clients){ 
-          var otherClient = clients[otherIndex];
+        for (var i = 0; i < clients.length; i++) {
+          var otherClient = clients[i];
           if (otherClient.id != cID) {
             otherClient.connection.send(msg, sendCallback);
           }
@@ -112,8 +113,8 @@ wsServer.on('request', function(request) {
       {
         var room = rooms[roomID];
 
-        for(var otherIndex in room.players){ 
-          var otherClient = room.players[otherIndex];
+        for (var i = 0; i < room.players.length; i++) {
+          var otherClient = room.players[i];
           if (otherClient.id != cID) {
             otherClient.connection.send(msg, sendCallback);
           }
@@ -134,11 +135,11 @@ wsServer.on('request', function(request) {
 
       switch(msg.msg_type) {
         case "GAMEROOMS":
-          var response = {};
-          response.msg_type = "GAMEROOMS";
-          response.data = {rooms: rooms};
+          var gameRoomsMSG = {};
+          gameRoomsMSG.msg_type = "GAMEROOMS";
+          gameRoomsMSG.data = {rooms: rooms};
 
-          connection.send(JSON.stringify(response, roomReplacer));
+          connection.send(JSON.stringify(gameRoomsMSG, roomReplacer));
           handled = true;
           break;
           
@@ -147,6 +148,7 @@ wsServer.on('request', function(request) {
           var room = rooms[roomID];
           
           if(room.host_id == undefined){
+            console.log("New host: " + cID);
             room.host_id = cID;
           }
 
@@ -161,6 +163,7 @@ wsServer.on('request', function(request) {
             data: {host_id: room.host_id}
           };
           sendMessageToClient(cID, JSON.stringify(msgRoomInfo));
+          console.log("New client: " + JSON.stringify(Object.keys(client)));
 
           room.players.push(client);
           room.player_count += 1;
@@ -199,18 +202,19 @@ wsServer.on('request', function(request) {
         for(var roomID in rooms)
         {
           var room = rooms[roomID];
-          if(room.players.indexOf(client) != -1)
+          var playerIndex = room.players.indexOf(client);
+          if(playerIndex != -1)
           {
             room.player_count -= 1;
-            room.players.remove(room.players.indexOf(client));
+            room.players.remove(playerIndex);
 
             if(cID == room.host_id){
-
+              
               // Create a new host id
               room.host_id = undefined;
 
               if(room.player_count > 0){
-                room.host_id = room.players[0];
+                room.host_id = room.players[0].id;
               }
             }
           }
