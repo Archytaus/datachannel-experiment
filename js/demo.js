@@ -11,14 +11,8 @@ Space.network.onServerMessage('GAMEROOMS', function(msg){
   var rooms = game_rooms_response.rooms;
 
   for(var room_index in rooms) {
-    var roomInfo = rooms[room_index];
-
-    var room = Space.Room.create({
-      id: roomInfo.id,
-      name: roomInfo.name,
-      player_count: roomInfo.player_count,
-      capacity: roomInfo.capacity,
-    });
+    var room = Space.Room.create(rooms[room_index]);
+    
     Space.RoomsController.pushObject(room);
   }
 });
