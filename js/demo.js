@@ -12,7 +12,7 @@ Space.network.onServerMessage('GAMEROOMS', function(msg){
 
   for(var room_index in rooms) {
     var room = Space.Room.create(rooms[room_index]);
-    
+
     Space.RoomsController.pushObject(room);
   }
 });
@@ -35,6 +35,7 @@ var initializeWorld = function(scene) {
 
 var startScene = function(){
   $('#game_rooms').remove();
+  Space.GameView.appendTo('#scene');
   var container = $('#scene');
 
   // set the scene size
@@ -77,8 +78,8 @@ var startScene = function(){
   // create a new mesh with
   // sphere geometry - we will cover
   // the sphereMaterial next!
-  var player = new Entity(Space.network.id);
-  player.createDummy(scene);
+  Space.player = new Entity(Space.network.id);
+  Space.player.createDummy(scene);
 
   // create a point light
   var pointLight =
@@ -115,31 +116,37 @@ var startScene = function(){
 
   var update = function(){
     var moveDirection = new CANNON.Vec3();
-
-    if( keyboard.pressed("w")){
-      moveDirection.z -= 500;
+    var speed = Space.PlayerInfo.get('speed');
+    var max_speed = Space.PlayerInfo.get('max_speed');
+    
+    if( keyboard.pressed("w") && speed < max_speed){
+      speed += 1;
+      Space.PlayerInfo.set('speed', speed);  
     }
-    if( keyboard.pressed("s")){
-      moveDirection.z += 500;
+    if( keyboard.pressed("s") && speed > 0){
+      speed -= 1;
+      Space.PlayerInfo.set('speed', speed);  
     }
+    
+    moveDirection.z += -speed * 50;
 
     if( keyboard.pressed("d")){
-      player.body.angularVelocity.y -= 0.01;
+      Space.player.body.angularVelocity.y -= 0.01;
     }
     
     if( keyboard.pressed("a")){
-      player.body.angularVelocity.y += 0.01;
+      Space.player.body.angularVelocity.y += 0.01;
     }
 
-    var worldDirection = player.body.quaternion.vmult(moveDirection);
-    player.body.force = worldDirection;
+    var worldDirection = Space.player.body.quaternion.vmult(moveDirection);
+    Space.player.body.force = worldDirection;
 
-    player.body.position.copy(camera.position);
+    Space.player.body.position.copy(camera.position);
 
     var cameraOffset = new CANNON.Vec3(0, 100, 300);
-    var cameraWorldOffset = player.body.quaternion.vmult(cameraOffset);
+    var cameraWorldOffset = Space.player.body.quaternion.vmult(cameraOffset);
     camera.position.add(cameraWorldOffset);
-    camera.lookAt(player.body.position);
+    camera.lookAt(Space.player.body.position);
 
   };
 

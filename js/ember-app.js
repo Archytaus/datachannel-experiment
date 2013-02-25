@@ -9,6 +9,11 @@ Space.Room = Ember.Object.extend({
   capacity: 0,
 });
 
+Space.PlayerInfo = Ember.Object.create({
+  speed: 0,
+  max_speed: 50,
+});
+
 Space.RoomsController = Ember.ArrayController.create({
   content: [],
   joinRoom: function(room){
@@ -16,4 +21,8 @@ Space.RoomsController = Ember.ArrayController.create({
 
     Space.JoinRoom(room.id);
   },
+});
+
+Space.GameView = Ember.View.create({
+  templateName: 'game-view',
 });
