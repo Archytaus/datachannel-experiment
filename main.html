@@ -7,8 +7,12 @@
   </head>
   <body>
     <h1>Data Channel Experiment</h1>
-    
+
     <script type="text/x-handlebars" data-template-name="application">
+      {{outlet}}
+    </script>
+    
+    <script type="text/x-handlebars" data-template-name="rooms">
       <table id="game_rooms">
         <thead>
           <tr>
@@ -18,9 +22,9 @@
         </thead>
         <tbody>
 
-          {{#each room in Space.RoomsController}}
+          {{#each room in controller}}
             <tr>
-              <td {{action joinRoom room target="Space.RoomsController"}}>{{room.name}}</td>
+              <td {{action joinRoom room target="controller"}}>{{room.name}}</td>
               <td>{{room.player_count}} / {{room.capacity}}</td>
             </tr>
           {{/each}}
@@ -30,11 +34,11 @@
     </script>
 
     <script type="text/x-handlebars" data-template-name="game-view">
-      <b>Speed:</b>{{Space.PlayerInfo.speed}} / {{Space.PlayerInfo.max_speed}}
+      <b>Speed:</b> {{Space.PlayerInfo.speed}} / {{Space.PlayerInfo.max_speed}}
     </script>
 
     <div id="scene"></div>
-    
+
     <script type="text/javascript" src="./js/lib/jquery-1.9.1.min.js"></script>
     <script type="text/javascript" src="./js/lib/handlebars.js"></script>
     <script type="text/javascript" src="./js/lib/ember-1.0.0-rc.1.js"></script>

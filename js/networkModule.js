@@ -12,8 +12,11 @@ var networkModule = (function () {
     this.id = undefined;
     this.room_id = undefined;
     this.socket = undefined;
+    this.server_connected = false;
 
     var serverMessageCallback = {};
+    var serverOnConnectionCallback = [];
+
     var peerMessageCallback = {};
 
     this.findPeer = function(id){
@@ -63,13 +66,13 @@ var networkModule = (function () {
       trace("onSessionOpened Session opened");
     };
 
-    this.onReceiveMessageCallback = function(event) {        
+    this.onReceiveMessageCallback = function(event) {
       var msg = JSON.parse(event.data);
 
       if(peerMessageCallback.hasOwnProperty(msg.msg_type)){
         for (var i = peerMessageCallback[msg.msg_type].length - 1; i >= 0; i--) {
           peerMessageCallback[msg.msg_type][i].call(this, msg);
-        };
+        }
       }
     };
 
@@ -242,7 +245,7 @@ var networkModule = (function () {
         if(serverMessageCallback.hasOwnProperty(msg.msg_type)){
           for (var i = serverMessageCallback[msg.msg_type].length - 1; i >= 0; i--) {
             serverMessageCallback[msg.msg_type][i].call(this, msg);
-          };
+          }
         }
     };
 
@@ -258,19 +261,23 @@ var networkModule = (function () {
 
       this.socket.onopen = function () {
         trace("openChannel Channel opened.");
-        
-        self.onServerConnected();
-        if(self.onServerConnected != undefined){
-          
+        self.server_connected = true;
+
+        for (var i = serverOnConnectionCallback.length - 1; i >= 0; i--) {
+          serverOnConnectionCallback[i].call(this);
         }
       };
 
       this.socket.onerror = function (error) {
-         trace("openChannel - Channel error:" + error);
+        self.server_connected = false;
+
+        trace("openChannel - Channel error:" + error);
       };
 
       this.socket.onclose = function () {
-         trace("openChannel - Channel close.");
+        self.server_connected = false;
+
+        trace("openChannel - Channel close.");
       };
 
       // Log messages from the server
@@ -301,7 +308,7 @@ var networkModule = (function () {
     this.sendPeer = function(peerId, msg){
       var peer = this.findPeer(peerId);
       if(peer.dataChannel && peer.dataChannel.readyState == "open"){
-        peer.dataChannel.send(JSON.stringify(msg));  
+        peer.dataChannel.send(JSON.stringify(msg));
       }
     };
 
@@ -320,8 +327,12 @@ var networkModule = (function () {
       trace('Peer' + peer.id + ' disconnected');
     };
 
-    this.onServerConnected = function(){
-      trace('Connected to the server');
+    this.runWhenServerConnected = function(callback){
+      if(this.server_connected){
+        callback();
+      }
+
+      serverOnConnectionCallback.push(callback);
     };
 
     this.onServerMessage = function(msg_type, callback){

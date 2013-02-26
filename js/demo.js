@@ -1,23 +1,3 @@
-Space.network = networkModule.connect();
-
-Space.network.onServerConnected = function(){
-  Space.network.sendServer({
-    msg_type: 'GAMEROOMS'
-  });
-};
-
-Space.network.onServerMessage('GAMEROOMS', function(msg){
-  var game_rooms_response = msg.data;
-  var rooms = game_rooms_response.rooms;
-
-  for(var room_index in rooms) {
-    var room = Space.Room.create(rooms[room_index]);
-
-    Space.RoomsController.pushObject(room);
-  }
-});
-
-Space.network.connectToServer("127.0.0.1", "8080");
 
 var randomInRange = function(min, max){
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -35,7 +15,7 @@ var initializeWorld = function(scene) {
 
 var startScene = function(){
   $('#game_rooms').remove();
-  Space.GameView.appendTo('#scene');
+  
   var container = $('#scene');
 
   // set the scene size
@@ -50,7 +30,10 @@ var startScene = function(){
 
   // create a WebGL renderer, camera
   // and a scene
-  var renderer = new THREE.WebGLRenderer();
+  Space.Renderer = new THREE.WebGLRenderer();
+  Space.Renderer.setSize(WIDTH, HEIGHT);
+  container.append(Space.Renderer.domElement);
+
   var camera =
     new THREE.PerspectiveCamera(
       VIEW_ANGLE,
@@ -62,16 +45,6 @@ var startScene = function(){
 
   // add the camera to the scene
   scene.addToRenderScene(camera);
-
-  // the camera starts at 0,0,0
-  // so pull it back
-  camera.position.z = 300;
-
-  // start the renderer
-  renderer.setSize(WIDTH, HEIGHT);
-
-  // attach the render-supplied DOM element
-  container.append(renderer.domElement);
 
   var keyboard = new THREEx.KeyboardState();
 
@@ -161,15 +134,17 @@ var startScene = function(){
   var render = function() {
     scene.preRender();
 
-    renderer.render(scene.scene, camera);
+    if(Space.Renderer){
+      Space.Renderer.render(scene.scene, camera);  
+    }
   };
-
+  
   return scene;
 };
 
 Space.JoinRoom = function(roomID) {
   trace("JoinRoom start");
-
+  
   Space.network.room_id = roomID;
 
   Space.network.sendServer({
@@ -180,10 +155,13 @@ Space.JoinRoom = function(roomID) {
   Space.network.onServerMessage('ROOMINFO', function(msg){
     setCounterStart(Space.network.id * 100);
 
-    var scene = startScene();
+    var currentView = Space.GameView.create();
+    currentView.appendTo('#scene');
+    
+    Space.Scene = startScene();
 
     if(Space.network.isHost()){
-      initializeWorld(scene);
+      initializeWorld(Space.Scene);
     }
   });
 };
