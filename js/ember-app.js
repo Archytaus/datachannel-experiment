@@ -71,8 +71,12 @@ Space.GameView = Ember.View.extend({
   templateName: 'game-view',
   controller: Space.PlayerInfo,
 
-  init: function() {
-    this._super();
-    console.log("ASADASD");
+  didInsertElement: function() {
+    Space.Renderer = new THREE.WebGLRenderer();
+    Space.Renderer.setSize(400, 300);
+    
+    var container = $('#scene');
+    container.append(Space.Renderer.domElement);
   }
+
 });

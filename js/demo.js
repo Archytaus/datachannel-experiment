@@ -1,4 +1,3 @@
-
 var randomInRange = function(min, max){
   return Math.floor(Math.random() * (max - min + 1)) + min;
 };
@@ -7,16 +6,13 @@ var initializeWorld = function(scene) {
   for(var i = 0; i < 5; i++){
     var asteroid = new Entity(Space.network.id);
     asteroid.createDummy(scene);
-    asteroid.body.position.set(randomInRange(-300, 300), 
-      randomInRange(-300, 300), 
+    asteroid.body.position.set(randomInRange(-300, 300),
+      randomInRange(-300, 300),
       randomInRange(-300, 300));
   }
 };
 
 var startScene = function(){
-  $('#game_rooms').remove();
-  
-  var container = $('#scene');
 
   // set the scene size
   var WIDTH = 400,
@@ -27,13 +23,7 @@ var startScene = function(){
     ASPECT = WIDTH / HEIGHT,
     NEAR = 0.1,
     FAR = 10000;
-
-  // create a WebGL renderer, camera
-  // and a scene
-  Space.Renderer = new THREE.WebGLRenderer();
-  Space.Renderer.setSize(WIDTH, HEIGHT);
-  container.append(Space.Renderer.domElement);
-
+  
   var camera =
     new THREE.PerspectiveCamera(
       VIEW_ANGLE,
@@ -48,9 +38,6 @@ var startScene = function(){
 
   var keyboard = new THREEx.KeyboardState();
 
-  // create a new mesh with
-  // sphere geometry - we will cover
-  // the sphereMaterial next!
   Space.player = new Entity(Space.network.id);
   Space.player.createDummy(scene);
 
@@ -94,11 +81,11 @@ var startScene = function(){
     
     if( keyboard.pressed("w") && speed < max_speed){
       speed += 1;
-      Space.PlayerInfo.set('speed', speed);  
+      Space.PlayerInfo.set('speed', speed);
     }
     if( keyboard.pressed("s") && speed > 0){
       speed -= 1;
-      Space.PlayerInfo.set('speed', speed);  
+      Space.PlayerInfo.set('speed', speed);
     }
     
     moveDirection.z += -speed * 50;
@@ -125,9 +112,9 @@ var startScene = function(){
 
   var sendWorldState = function(){
     Space.network.sendPeers({
-      msg_type: "WORLDSTATE", 
-      id: Space.network.id, 
-      data: scene.getWorldState(),
+      msg_type: "WORLDSTATE",
+      id: Space.network.id,
+      data: scene.getWorldState()
     });
   };
 
@@ -135,29 +122,30 @@ var startScene = function(){
     scene.preRender();
 
     if(Space.Renderer){
-      Space.Renderer.render(scene.scene, camera);  
+      Space.Renderer.render(scene.scene, camera);
     }
   };
-  
+
   return scene;
 };
 
 Space.JoinRoom = function(roomID) {
   trace("JoinRoom start");
-  
+
   Space.network.room_id = roomID;
 
   Space.network.sendServer({
-    msg_type: 'JOINROOM', 
+    msg_type: 'JOINROOM',
     data: {id: roomID}
   });
 
   Space.network.onServerMessage('ROOMINFO', function(msg){
     setCounterStart(Space.network.id * 100);
 
+    $('#game_rooms').remove();
     var currentView = Space.GameView.create();
-    currentView.appendTo('#scene');
-    
+    currentView.appendTo('body');
+
     Space.Scene = startScene();
 
     if(Space.network.isHost()){
