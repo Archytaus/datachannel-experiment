@@ -5,7 +5,8 @@ function Scene(peer_id) {
   this.entities = {};
 
   this.world.broadphase = new CANNON.NaiveBroadphase();
-
+  this.keyboard = new THREEx.KeyboardState();
+  
   this.addToPhysicsWorld = function(obj){
     this.world.add(obj);
   };
@@ -49,8 +50,8 @@ function Scene(peer_id) {
   this.getWorldState = function(){
     var self = this;
     var my_owned_entities = _.filter(this.entities, function (entity, id) {
-      return entity.owner_id == self.peer_id});
-    return _.map(my_owned_entities, function (entity) {return entity.networkState()});
+      return entity.owner_id == self.peer_id; });
+    return _.map(my_owned_entities, function (entity) { return entity.networkState(); });
   };
 
   this.updateWorldState = function(state) {

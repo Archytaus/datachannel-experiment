@@ -27,11 +27,9 @@ var initializeWorld = function(scene) {
 var startScene = function(){
   var scene = new Scene(Space.network.id);
 
-  var keyboard = new THREEx.KeyboardState();
-
   Space.Player = new Entity(Space.network.id);
   Space.Player.createDummy(scene);
-
+  
   Space.network.onPeerConnected = function(peer) {
     peer.entity = new Entity(peer.id);
     peer.entity.createDummy(scene);
@@ -44,46 +42,12 @@ var startScene = function(){
   });
 
   setInterval(function(){
-    update();
-
     scene.update();
 
     sendWorldState();
 
     render();
   }, 1000.0/60.0);
-
-  var update = function(){
-    var moveDirection = new CANNON.Vec3();
-    var speed = Space.PlayerInfo.get('speed');
-    var max_speed = Space.PlayerInfo.get('max_speed');
-    
-    if( keyboard.pressed("w") && speed < max_speed){
-      speed += 1;
-      Space.PlayerInfo.set('speed', speed);
-    }
-    if( keyboard.pressed("s") && speed > 0){
-      speed -= 1;
-      Space.PlayerInfo.set('speed', speed);
-    }
-    
-    moveDirection.z += -speed * 50;
-
-    if( keyboard.pressed("d")){
-      Space.Player.body.angularVelocity.y -= 0.01;
-    }
-    
-    if( keyboard.pressed("a")){
-      Space.Player.body.angularVelocity.y += 0.01;
-    }
-
-    var worldDirection = Space.Player.body.quaternion.vmult(moveDirection);
-    Space.Player.body.force = worldDirection;
-
-    if(Space.Camera){
-      Space.Camera.update();
-    }
-  };
 
   var sendWorldState = function(){
     Space.network.sendPeers({
@@ -120,6 +84,38 @@ Space.JoinRoom = function(roomID) {
     currentView.appendTo('body');
 
     Space.Scene = startScene();
+
+    Space.Player.update = function() {
+      var moveDirection = new CANNON.Vec3();
+      var speed = Space.PlayerInfo.get('speed');
+      var max_speed = Space.PlayerInfo.get('max_speed');
+      
+      if( this.scene.keyboard.pressed("w") && speed < max_speed){
+        speed += 1;
+        Space.PlayerInfo.set('speed', speed);
+      }
+      if( this.scene.keyboard.pressed("s") && speed > 0){
+        speed -= 1;
+        Space.PlayerInfo.set('speed', speed);
+      }
+      
+      moveDirection.z += -speed * 50;
+
+      if( this.scene.keyboard.pressed("d")){
+        this.body.angularVelocity.y -= 0.01;
+      }
+      
+      if( this.scene.keyboard.pressed("a")){
+        this.body.angularVelocity.y += 0.01;
+      }
+
+      var worldDirection = this.body.quaternion.vmult(moveDirection);
+      this.body.force = worldDirection;
+
+      if(Space.Camera){
+        Space.Camera.update();
+      }
+    };
 
     if(Space.network.isHost()){
       initializeWorld(Space.Scene);

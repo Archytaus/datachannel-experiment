@@ -9,7 +9,8 @@ function Entity(owner_id) {
   this.mesh = undefined;
   this.id = uIDCounterStart++;
   this.owner_id = owner_id;
-
+  this.scene = undefined;
+  
   this.preRender = function(){
     this.body.position.copy(this.mesh.position);
     this.body.quaternion.copy(this.mesh.quaternion);
@@ -43,6 +44,8 @@ function Entity(owner_id) {
   };
 
   this.createDummy = function(scene) {
+    this.scene = scene;
+    
     // set up the sphere vars
     var radius = 50,
         segments = 16,
