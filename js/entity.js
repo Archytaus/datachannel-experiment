@@ -10,7 +10,7 @@ function Entity(owner_id) {
   this.id = uIDCounterStart++;
   this.owner_id = owner_id;
   this.scene = undefined;
-  
+
   this.preRender = function(){
     this.body.position.copy(this.mesh.position);
     this.body.quaternion.copy(this.mesh.quaternion);
@@ -18,13 +18,13 @@ function Entity(owner_id) {
   
   this.update = function(){
   };
-
+  
   this.setFromNetworkState = function(state){
     this.body.position.set(state.position.x, state.position.y, state.position.z);
     this.body.quaternion.set(state.quaternion.x, state.quaternion.y, state.quaternion.z, state.quaternion.w);
-    this.body.velocity.set(state.velocity.x, state.velocity.y, state.velocity.z);        
+    this.body.velocity.set(state.velocity.x, state.velocity.y, state.velocity.z);
   };
-
+  
   this.networkState = function(){
     return {
         id: this.id,
@@ -62,7 +62,7 @@ function Entity(owner_id) {
     this.mesh.useQuaternion = true;
     
     // Create a sphere
-    var mass = 5, radius = 1;
+    var mass = 5, radius = 50;
     var sphereShape = new CANNON.Sphere(radius);
     this.body = new CANNON.RigidBody(mass, sphereShape);
 

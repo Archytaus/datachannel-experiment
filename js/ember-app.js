@@ -13,6 +13,7 @@ Space.ApplicationView = Ember.View.extend({
 Space.ApplicationController = Ember.Controller.extend();
 
 Space.Router.map(function(){
+  //TODO: RS - Make this the default route
   this.route("rooms");
 });
 

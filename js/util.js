@@ -12,6 +12,10 @@ Array.prototype.remove = function(from, to){
   return this.push.apply(this, rest);
 };
 
+Math.randomInRange = function(min, max){
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+};
+
 window.requestAnimFrame = function(){
     return (
         window.requestAnimationFrame       || 

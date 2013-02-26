@@ -1,8 +1,3 @@
-//TODO: RS - Move into the util file and extend the Math Prototype
-var randomInRange = function(min, max){
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-};
-
 var initializeWorld = function(scene) {
   // create a point light
   var pointLight =
@@ -19,9 +14,10 @@ var initializeWorld = function(scene) {
   for(var i = 0; i < 10; i++){
     var asteroid = new Entity(Space.network.id);
     asteroid.createDummy(scene);
-    asteroid.body.position.set(randomInRange(-600, 600),
-      randomInRange(-600, 600),
-      randomInRange(-600, 600));
+    asteroid.body.position.set(
+      Math.randomInRange(-600, 600),
+      Math.randomInRange(-600, 600),
+      Math.randomInRange(-600, 600));
   }
 };
 
@@ -109,6 +105,7 @@ Space.JoinRoom = function(roomID) {
       
       moveDirection.z += -speed * 50;
 
+      //TODO: RS - Replace keyboard rotation with mouse locked rotation
       if( this.scene.keyboard.pressed("d")){
         this.body.angularVelocity.y -= 0.01;
       }
