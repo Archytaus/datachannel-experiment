@@ -1,3 +1,4 @@
+//TODO: RS - Move these functions / declarations into appropriate files
 Space = Ember.Application.create({
   ready: function(){
     Space.network = networkModule.connect();

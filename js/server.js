@@ -12,6 +12,7 @@ Array.prototype.remove = function(from, to){
   return this.push.apply(this, rest);
 };
 
+//TODO: RS - Clean up client iteration (Underscore?)
 function findClientByID(id) {
   for (var i = 0; i < clients.length; i++) {
     var client = clients[i];
@@ -22,6 +23,7 @@ function findClientByID(id) {
   return undefined;
 }
 
+//TODO: RS - Clean up client in room iteration (Underscore?)
 function findClientInRoom(id, roomID){
   var room = rooms[roomID];
   for (var i = 0; i < room.players.length; i++) {
@@ -92,6 +94,8 @@ wsServer.on('request', function(request) {
 
     con.send(JSON.stringify(msg_handshake));
 
+    //TODO: RS - Clean up client iteration (Underscore?)
+    // Also pass the cID in to this function so that it can be declared outside of this callback
     function passMessageToOtherClients(msg) {
       try
       {
@@ -108,6 +112,8 @@ wsServer.on('request', function(request) {
       }
     }
 
+    //TODO: RS - Clean up client in room iteration (Underscore?)
+    // Also pass the cID in to this function so that it can be declared outside of this callback
     function passMessageToOtherClientsInRoom(roomID, msg) {
       try
       {
@@ -126,6 +132,7 @@ wsServer.on('request', function(request) {
       }
     }
 
+    // TODO: RS - Pass context in to this function so that it can be declared outside of this callback
     function processMessageFromClient(connection,message) {
       
       var handled = false;
@@ -199,6 +206,7 @@ wsServer.on('request', function(request) {
 
         clients.remove(clients.indexOf(client));
 
+        //TODO: RS - Move into its own function
         for(var roomID in rooms)
         {
           var room = rooms[roomID];

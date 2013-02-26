@@ -1,7 +1,7 @@
 var networkModule = (function () {
   "use strict";
 
-  function CreateConnection(){
+  function NetworkConnection(){
 
     this.nodeHostAddress  = "127.0.0.1";
     this.nodeHostPort     = "8080";
@@ -119,7 +119,7 @@ var networkModule = (function () {
                id: event.candidate.sdpMid,
                label: event.candidate.sdpMLineIndex,
                peer_id: self.id,
-               dest_id: peerID,
+               dest_id: peerID
              };
              self.socket.send(JSON.stringify(msgCANDIDATE));
           }
@@ -135,9 +135,9 @@ var networkModule = (function () {
             msg_type: 'OFFER',
             data: sessionDescription,
             peer_id: self.id,
-            dest_id: peerID,
+            dest_id: peerID
           };
-          self.socket.send(JSON.stringify(msgOFFER));  
+          self.socket.send(JSON.stringify(msgOFFER));
         };
 
         pc.setLocalDescription(sessionDescription, onOfferSetLocalDescriptionSuccess, onSetLocalDescriptionError);
@@ -183,7 +183,7 @@ var networkModule = (function () {
 
             trace("Creating data channel for " + peer.id);
 
-            var dataChannel = peer.connection.createDataChannel("sendDataChannel", 
+            var dataChannel = peer.connection.createDataChannel("sendDataChannel",
                                                  {reliable: false});
 
             this.prepareDataChannel(dataChannel, peer);
@@ -206,9 +206,9 @@ var networkModule = (function () {
                   msg_type: 'ANSWER',
                   data: peer.connection.localDescription,
                   peer_id: self.id,
-                  dest_id: msg.peer_id,
+                  dest_id: msg.peer_id
                 };
-                self.socket.send(JSON.stringify(msgANSWER));  
+                self.socket.send(JSON.stringify(msgANSWER));
               }; 
 
               peer.connection.setLocalDescription(sessionDescription, onAnswerSetLocalDescriptionSuccess, onSetLocalDescriptionError);
@@ -343,8 +343,6 @@ var networkModule = (function () {
     };
   }
 
-  return {
-    connect: function(){return new CreateConnection}
-  }
+  return { connect: function(){return new NetworkConnection} }
 
 }());
