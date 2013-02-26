@@ -73,9 +73,9 @@ Space.GameView = Ember.View.extend({
 
   didInsertElement: function() {
     Space.Renderer = new THREE.WebGLRenderer();
-    Space.Renderer.setSize(400, 300);
-    
-    var container = $('#scene');
+    Space.Renderer.setSize(640, 480);
+
+    var container = $('#canvas-container');
     container.append(Space.Renderer.domElement);
   }
 

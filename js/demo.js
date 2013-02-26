@@ -15,8 +15,9 @@ var initializeWorld = function(scene) {
 var startScene = function(){
 
   // set the scene size
-  var WIDTH = 400,
-    HEIGHT = 300;
+  var canvas = $('#canvas-container canvas');
+  var WIDTH = 640,
+    HEIGHT = 480;
 
   // set some camera attributes
   var VIEW_ANGLE = 45,
