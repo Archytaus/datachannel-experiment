@@ -3,6 +3,18 @@ var randomInRange = function(min, max){
 };
 
 var initializeWorld = function(scene) {
+  // create a point light
+  var pointLight =
+    new THREE.PointLight(0xFFFFFF);
+
+  // set its position
+  pointLight.position.x = 10;
+  pointLight.position.y = 50;
+  pointLight.position.z = 130;
+
+  // add to the scene
+  scene.addToRenderScene(pointLight);
+
   for(var i = 0; i < 5; i++){
     var asteroid = new Entity(Space.network.id);
     asteroid.createDummy(scene);
@@ -17,20 +29,8 @@ var startScene = function(){
 
   var keyboard = new THREEx.KeyboardState();
 
-  Space.player = new Entity(Space.network.id);
-  Space.player.createDummy(scene);
-
-  // create a point light
-  var pointLight =
-    new THREE.PointLight(0xFFFFFF);
-
-  // set its position
-  pointLight.position.x = 10;
-  pointLight.position.y = 50;
-  pointLight.position.z = 130;
-
-  // add to the scene
-  scene.addToRenderScene(pointLight);
+  Space.Player = new Entity(Space.network.id);
+  Space.Player.createDummy(scene);
 
   Space.network.onPeerConnected = function(peer) {
     peer.entity = new Entity(peer.id);
@@ -70,15 +70,15 @@ var startScene = function(){
     moveDirection.z += -speed * 50;
 
     if( keyboard.pressed("d")){
-      Space.player.body.angularVelocity.y -= 0.01;
+      Space.Player.body.angularVelocity.y -= 0.01;
     }
     
     if( keyboard.pressed("a")){
-      Space.player.body.angularVelocity.y += 0.01;
+      Space.Player.body.angularVelocity.y += 0.01;
     }
 
-    var worldDirection = Space.player.body.quaternion.vmult(moveDirection);
-    Space.player.body.force = worldDirection;
+    var worldDirection = Space.Player.body.quaternion.vmult(moveDirection);
+    Space.Player.body.force = worldDirection;
 
     if(Space.Camera){
       Space.Camera.update();
@@ -105,8 +105,6 @@ var startScene = function(){
 };
 
 Space.JoinRoom = function(roomID) {
-  trace("JoinRoom start");
-
   Space.network.room_id = roomID;
 
   Space.network.sendServer({
@@ -123,36 +121,6 @@ Space.JoinRoom = function(roomID) {
 
     Space.Scene = startScene();
 
-    // set the scene size
-    var canvas = $('#canvas-container canvas');
-    var WIDTH = 640,
-      HEIGHT = 480;
-
-    // set some camera attributes
-    var VIEW_ANGLE = 45,
-      ASPECT = WIDTH / HEIGHT,
-      NEAR = 0.1,
-      FAR = 10000;
-    
-    Space.Camera =
-      new THREE.PerspectiveCamera(
-        VIEW_ANGLE,
-        ASPECT,
-        NEAR,
-        FAR);
-
-    Space.Camera.update = function(){
-      Space.player.body.position.copy(Space.Camera.position);
-
-      var cameraOffset = new CANNON.Vec3(0, 100, 300);
-      var cameraWorldOffset = Space.player.body.quaternion.vmult(cameraOffset);
-      Space.Camera.position.add(cameraWorldOffset);
-      Space.Camera.lookAt(Space.player.body.position);  
-    };
-
-    // add the camera to the scene
-    Space.Scene.addToRenderScene(Space.Camera);
-    
     if(Space.network.isHost()){
       initializeWorld(Space.Scene);
     }

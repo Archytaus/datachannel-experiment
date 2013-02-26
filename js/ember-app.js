@@ -77,6 +77,34 @@ Space.GameView = Ember.View.extend({
 
     var container = $('#canvas-container');
     container.append(Space.Renderer.domElement);
-  }
 
+    var canvas = $('#canvas-container canvas');
+    var WIDTH = 640,
+      HEIGHT = 480;
+
+    // set some camera attributes
+    var VIEW_ANGLE = 45,
+      ASPECT = WIDTH / HEIGHT,
+      NEAR = 0.1,
+      FAR = 10000;
+    
+    Space.Camera =
+      new THREE.PerspectiveCamera(
+        VIEW_ANGLE,
+        ASPECT,
+        NEAR,
+        FAR);
+
+    Space.Camera.update = function(){
+      Space.Player.body.position.copy(Space.Camera.position);
+
+      var cameraOffset = new CANNON.Vec3(0, 100, 300);
+      var cameraWorldOffset = Space.Player.body.quaternion.vmult(cameraOffset);
+      Space.Camera.position.add(cameraWorldOffset);
+      Space.Camera.lookAt(Space.Player.body.position);
+    };
+
+    // add the camera to the scene
+    Space.Scene.addToRenderScene(Space.Camera);
+  }
 });
