@@ -9,15 +9,30 @@
     <title>Data Channel Experiment</title>
   </head>
   <body>
-    <header id="header">
-      <h1>Data Channel Experiment</h1>
-    </header>
     
     <script type="text/x-handlebars" data-template-name="application">
+      <header id="header">
+        <h1>Data Channel Experiment</h1>
+      </header>
+
       {{outlet}}
     </script>
-    
+      
+    <script type="text/x-handlebars" data-template-name="login">
+      <h2>Login</h2>
+      
+      <label>Player Name</label>
+      {{view Ember.TextField valueBinding="view.player_name"}}
+      <button {{action submit target="view" }}type="submit">Done</button>
+    </script>
+
     <script type="text/x-handlebars" data-template-name="rooms">
+      {{#if Space.PlayerName}}
+        <div>
+          <span> Welcome {{Space.PlayerName}} </span>
+        </div>
+      {{/if}}
+
       <table id="game_rooms">
         <thead>
           <tr>
@@ -37,7 +52,7 @@
         </tbody>
       </table>
     </script>
-
+    
     <script type="text/x-handlebars" data-template-name="game-view">
       <div id="canvas-container"></div>
 
@@ -61,5 +76,7 @@
     <script type="text/javascript" src="./js/scene.js"></script>
     <script type="text/javascript" src="./js/entity.js"></script>
     <script type="text/javascript" src="./js/demo.js"></script>
+    
+    <script type="text/javascript" src="./fonts/helvetiker_regular.typeface.js"></script>
   </body>
 </html>

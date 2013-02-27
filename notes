@@ -2,8 +2,8 @@ TODOS:
   - Create static web page version of the game
   - Add support for FF
   - Add helpful message if the browser is not compatible
-  - Capture player names when they start (and store as a cookie?)
-  - Display player names above their 'head'
+  - Capture player names when they start (and store as a cookie?) *
+  - Display player names above their 'head' *
   - Make sphere collision increase radius of the larger sphere (like osmosis)
   - Add some sound effects (Moving, collision, game start)
   - Add a bubble shader to the spheres

@@ -12,14 +12,43 @@ Space.ApplicationView = Ember.View.extend({
 });
 Space.ApplicationController = Ember.Controller.extend();
 
+Space.LoginView = Ember.View.extend({
+  templateName: 'login',
+  player_name: '',
+  submit: function(){
+    Space.PlayerName = this.player_name;
+    this.get('controller').transitionToRoute('rooms');
+  }
+});
+
 Space.Router.map(function(){
-  //TODO: RS - Make this the default route
+  this.route("login");
   this.route("rooms");
+  this.route("game");
+});
+
+Space.IndexRoute = Ember.Route.extend({
+  redirect: function () {
+    this.transitionTo('login');
+  }
 });
 
 Space.RoomsRoute = Ember.Route.extend({
   setupController: function(controller) {
     controller.set('content', []);
+  },
+  redirect: function() {
+    if(Space.PlayerName === undefined){
+      this.transitionTo('login');
+    }
+  }
+});
+
+Space.GameRoute = Ember.Route.extend({
+  redirect: function () {
+    if(Space.Scene === undefined){
+      this.transitionTo('rooms');
+    }
   }
 });
 
@@ -35,6 +64,7 @@ Space.RoomsController = Ember.ArrayController.extend({
     console.log("Joining room: " + room.id);
 
     Space.JoinRoom(room.id);
+    this.transitionToRoute('game');
   },
   addRoom: function(room){
     var newRoom = Space.Room.create(room);

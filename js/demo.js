@@ -22,15 +22,8 @@ var initializeWorld = function(scene) {
 };
 
 //TODO: RS - This whole function is a code smell. Perhaps move it into the scene object?
-var startScene = function(){
+var initializeScene = function(){
   var scene = new Scene(Space.network.id);
-
-  Space.Player = new Entity(Space.network.id);
-  Space.Player.createDummy(scene);
-
-  if(Space.network.isHost()){
-    initializeWorld(scene);
-  }
 
   Space.network.onPeerConnected = function(peer) {
     peer.entity = new Entity(peer.id);
@@ -77,16 +70,18 @@ Space.JoinRoom = function(roomID) {
     msg_type: 'JOINROOM',
     data: {id: roomID}
   });
+  
+  Space.Scene = initializeScene();
 
   Space.network.onServerMessage('ROOMINFO', function(msg){
     setCounterStart(Space.network.id * 100);
 
-    //TODO: RS - Can this be done so that this file doesn't have to bother with DOM Manipulation?
-    $('#game_rooms').remove();
-    var currentView = Space.GameView.create();
-    currentView.appendTo('body');
+    if(Space.network.isHost()){
+      initializeWorld(Space.Scene);
+    }
 
-    Space.Scene = startScene();
+    Space.Player = new Entity(Space.network.id);
+    Space.Player.createDummy(Space.Scene);
 
     //TODO: RS - Move elsewhere, perhaps into the view controller?
     Space.Player.update = function() {
