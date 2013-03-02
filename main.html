@@ -1,10 +1,62 @@
 <!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
 <html>
   <head>
     <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     
-    <link rel="stylesheet" href="styles/main.css"></link>
+    <!-- Modernizr -->
+    <script src="./assets/js/libs/modernizr-2.6.2.min.js"></script>
+    <!-- jQuery -->
+    <script type="text/javascript" src="./assets/js/libs/jquery-1.9.1.min.js"></script>
+    <!-- GroundworkCSS -->
+    <link type="text/css" rel="stylesheet" href="./assets/css/groundwork.css">
+    <link rel="stylesheet" href="./assets/css/main.css"></link>
+    <!--[if IE]>
+    <link type="text/css" rel="stylesheet" href="./assets/css/groundwork-ie.css">
+    <![endif]-->
+    <!--[if lt IE 9]>
+    <script type="text/javascript" src="./assets/js/libs/html5shiv.min.js"></script>
+    <![endif]-->
+    <!--[if IE 7]>
+    <link type="text/css" rel="stylesheet" href="./assets/css/font-awesome-ie7.min.css">
+    <![endif]-->
+    <script type="text/javascript">
+      // extend Modernizr to have datauri test
+      (function(){
+        var datauri = new Image();
+        datauri.onerror = function() {
+            Modernizr.addTest('datauri', function () { return false; });
+        };
+        datauri.onload = function() {
+            Modernizr.addTest('datauri', function () { return (datauri.width == 1 && datauri.height == 1); });
+            Modernizr.load({
+              test: Modernizr.datauri,
+              nope: './assets/css/no-datauri.css'
+            });
+        };
+        datauri.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
+      })();
+      // fallback if SVG unsupported
+      Modernizr.load({
+        test: Modernizr.inlinesvg,
+        nope: [
+          './assets/css/no-svg.css'
+        ]
+      });
+      // polyfill for HTML5 placeholders
+      Modernizr.load({
+        test: Modernizr.input.placeholder,
+        nope: [
+          './assets/css/placeholder_polyfill.css',
+          './assets/js/libs/placeholder_polyfill.jquery.js'
+        ]
+      });
+    </script>
     
     <title>Data Channel Experiment</title>
   </head>
@@ -12,48 +64,72 @@
     
     <!-- TODO: Move into own template file -->
     <script type="text/x-handlebars" data-template-name="application">
-      <header id="header">
-        <h1>Data Channel Experiment</h1>
-      </header>
+      <div class="white band padded">
 
-      {{outlet}}
+        <header id="header">
+          <h1 class="big responsive heading zero" data-compression="9" data-min="16" data-max="66" style="font-size: 66px;">Data Channel Experiment</h1>
+        </header>
+      </div>
+      <div class="container">
+        <div class="row one whole padded">
+          {{outlet}}
+        </div>
+      </div>
     </script>
       
     <!-- TODO: Move into own template file -->
     <script type="text/x-handlebars" data-template-name="login">
-      <h2>Login</h2>
-      
-      <label>Player Name</label>
-      {{view Ember.TextField valueBinding="view.player_name"}}
-      <button {{action submit target="view" }}type="submit">Done</button>
+      <div class="one half padded">
+        <form>
+          <fieldset>
+            <legend>Player Details</legend>
+
+            <label>Player Name</label>
+            <div class="row">
+              <div class="three fourths padded">
+              {{view Ember.TextField valueBinding="view.player_name"}}
+              </div>
+              <div class="one fourth padded">
+                <button {{action submit target="view" }}type="submit">Continue</button>
+              </div>
+            </div>
+          </fieldset>
+        <form>
+      </div>
     </script>
 
     <!-- TODO: Move into own template file -->
     <script type="text/x-handlebars" data-template-name="rooms">
-      {{#if Space.PlayerName}}
-        <div>
-          <span> Welcome {{Space.PlayerName}} </span>
+      {{#if Space.network.server_connected }}
+        {{#if Space.PlayerName}}
+          <div>
+            <span> Welcome {{Space.PlayerName}} </span>
+          </div>
+        {{/if}}
+
+        <table id="game_rooms">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Capacity</th>
+            </tr>
+          </thead>
+          <tbody>
+
+            {{#each room in controller}}
+              <tr>
+                <td {{action joinRoom room target="controller"}}>{{room.name}}</td>
+                <td>{{room.player_count}} / {{room.capacity}}</td>
+              </tr>
+            {{/each}}
+          
+          </tbody>
+        </table>
+      {{else}}
+        <div class="error">
+          <span>Unable to obtain a connection to the server. Please try again later.</span>
         </div>
       {{/if}}
-
-      <table id="game_rooms">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Capacity</th>
-          </tr>
-        </thead>
-        <tbody>
-
-          {{#each room in controller}}
-            <tr>
-              <td {{action joinRoom room target="controller"}}>{{room.name}}</td>
-              <td>{{room.player_count}} / {{room.capacity}}</td>
-            </tr>
-          {{/each}}
-        
-        </tbody>
-      </table>
     </script>
     
     <!-- TODO: Move into own template file -->
@@ -62,25 +138,30 @@
 
       <b>Speed:</b> {{Space.PlayerInfo.speed}} / {{Space.PlayerInfo.max_speed}}
     </script>
+    
+    <!-- scripts -->
+    <script type="text/javascript" src="./assets/js/plugins/jquery.orbit-1.4.0.js"></script>
+    <script type="text/javascript" src="./assets/js/plugins/jquery.responsiveText.js"></script>
+    <script type="text/javascript" src="./assets/js/groundwork.js"></script>
 
-    <script type="text/javascript" src="./js/lib/jquery-1.9.1.min.js"></script>
-    <script type="text/javascript" src="./js/lib/handlebars.js"></script>
-    <script type="text/javascript" src="./js/lib/ember-1.0.0-rc.1.js"></script>
-    <script src="js/ember-app.js"></script>
+    <script type="text/javascript" src="./assets/js/libs/handlebars.js"></script>
+    <script type="text/javascript" src="./assets/js/libs/ember-1.0.0-rc.1.js"></script>
     
-    <script type="text/javascript" src="./js/lib/underscore.js"></script>
-    <script type="text/javascript" src="./js/lib/three.min.js"></script>
-    <script type="text/javascript" src='./js/lib/THREEx.KeyboardState.js'></script>
-    <script type="text/javascript" src='./js/lib/cannon.js'></script>
+    <script src="./assets/js/ember-app.js"></script>
+    
+    <script type="text/javascript" src="./assets/js/libs/underscore.js"></script>
+    <script type="text/javascript" src="./assets/js/libs/three.min.js"></script>
+    <script type="text/javascript" src='./assets/js/libs/THREEx.KeyboardState.js'></script>
+    <script type="text/javascript" src='./assets/js/libs/cannon.js'></script>
 
-    <script type="text/javascript" src="./js/util.js"></script>
-    <script type="text/javascript" src="./js/adapter.js"></script>
-    <script type="text/javascript" src="./js/networkModule.js"></script>
+    <script type="text/javascript" src="./assets/js/util.js"></script>
+    <script type="text/javascript" src="./assets/js/adapter.js"></script>
+    <script type="text/javascript" src="./assets/js/networkModule.js"></script>
     
-    <script type="text/javascript" src="./js/scene.js"></script>
-    <script type="text/javascript" src="./js/entity.js"></script>
-    <script type="text/javascript" src="./js/demo.js"></script>
+    <script type="text/javascript" src="./assets/js/scene.js"></script>
+    <script type="text/javascript" src="./assets/js/entity.js"></script>
+    <script type="text/javascript" src="./assets/js/demo.js"></script>
     
-    <script type="text/javascript" src="./fonts/helvetiker_regular.typeface.js"></script>
+    <script type="text/javascript" src="./assets/fonts/helvetiker_regular.typeface.js"></script>
   </body>
 </html>

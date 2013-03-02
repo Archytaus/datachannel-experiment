@@ -51,14 +51,15 @@ var initializeScene = function(){
       Space.Renderer.render(scene.scene, Space.Camera);
     }
   };
-
-  setInterval(function(){
+  var update = function(){
     scene.update();
 
     sendWorldState();
 
     render();
-  }, 1000.0/60.0);
+  };
+
+  setInterval(update, 1000.0/60.0);
 
   return scene;
 };
@@ -82,23 +83,56 @@ Space.JoinRoom = function(roomID) {
 
     Space.Player = new Entity(Space.network.id);
     Space.Player.createDummy(Space.Scene);
+    Space.Player.MoveDirection = new CANNON.Vec3();
+    Space.Player.MoveSpeed = 50;
 
-    //TODO: RS - Move elsewhere, perhaps into the view controller?
-    Space.Player.update = function() {
-      var moveDirection = new CANNON.Vec3();
+    Space.Player.IsAccelerating = function(){
+      return this.scene.keyboard.pressed("w");
+    };
+
+    Space.Player.IsDecelerating = function(){
+      return this.scene.keyboard.pressed("s");
+    };
+
+    Space.Player.Accelerate = function(){
       var speed = Space.PlayerInfo.get('speed');
       var max_speed = Space.PlayerInfo.get('max_speed');
-      
-      if( this.scene.keyboard.pressed("w") && speed < max_speed){
+
+      if(speed < max_speed)
+      {
         speed += 1;
         Space.PlayerInfo.set('speed', speed);
+        Space.Player.MoveDirection.z = -speed * Space.Player.MoveSpeed;
       }
-      if( this.scene.keyboard.pressed("s") && speed > 0){
+    };
+
+    Space.Player.Decelerate = function(){
+      var speed = Space.PlayerInfo.get('speed');
+
+      if(speed > 0)
+      {
         speed -= 1;
         Space.PlayerInfo.set('speed', speed);
+        Space.Player.MoveDirection.z = -speed * Space.Player.MoveSpeed;
       }
+    };
+    
+    //TODO: RS - Move elsewhere, perhaps into the view controller?
+    Space.Player.update = function() {
       
-      moveDirection.z += -speed * 50;
+      for(var i = 0; i < 10000; i++)
+      {
+        var speed = Space.PlayerInfo.speed;
+        var max_speed = Space.PlayerInfo.max_speed;
+      }
+
+      if (Space.Player.IsAccelerating()) {
+        Space.Player.Accelerate();
+      }
+
+      if (Space.Player.IsDecelerating()) {
+        Space.Player.Decelerate();
+      }
 
       //TODO: RS - Replace keyboard rotation with mouse locked rotation
       if( this.scene.keyboard.pressed("d")){
@@ -109,7 +143,7 @@ Space.JoinRoom = function(roomID) {
         this.body.angularVelocity.y += 0.01;
       }
 
-      var worldDirection = this.body.quaternion.vmult(moveDirection);
+      var worldDirection = this.body.quaternion.vmult(Space.Player.MoveDirection);
       this.body.force = worldDirection;
 
       if(Space.Camera){

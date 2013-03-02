@@ -3,7 +3,7 @@
 var WebSocketServer =  require('websocket').server;
 var http = require('http');
 var clients = [];
-var rooms = {123: {id: 123, name: "Test Room", capacity: 16, players: [], player_count: 0}};
+var rooms = {123: {id: 123, name: "Test Room", capacity: 16, players: [], player_count: 0}, 456: {id: 456, name: "Hello Room", capacity: 16, players: [], player_count: 0}};
 var uidCounter = 0;
 
 Array.prototype.remove = function(from, to){

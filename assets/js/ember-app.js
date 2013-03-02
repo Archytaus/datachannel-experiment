@@ -91,7 +91,11 @@ Space.RoomsController = Ember.ArrayController.extend({
 });
 
 Space.RoomsView = Ember.View.extend({
-  templateName: 'rooms'
+  templateName: 'rooms',
+
+  didInsertElement: function() {
+    $('header h1.heading').css("font-size","24px");
+  }
 });
 
 Space.PlayerInfo = Ember.Object.create({
