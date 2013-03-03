@@ -1,3 +1,7 @@
 body {
   color: #2c2c2f;
 }
+
+table thead tr th {
+  height: 38px;
+}

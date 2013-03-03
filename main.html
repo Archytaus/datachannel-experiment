@@ -107,19 +107,23 @@
           </div>
         {{/if}}
 
-        <table id="game_rooms">
+        <table id="game_rooms" class="three fourths padded">
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Capacity</th>
+              <th class="one half">Name</th>
+              <th class="one fourth">Capacity</th>
+              <th class="one fourth"></th>
             </tr>
           </thead>
           <tbody>
 
             {{#each room in controller}}
               <tr>
-                <td {{action joinRoom room target="controller"}}>{{room.name}}</td>
-                <td>{{room.player_count}} / {{room.capacity}}</td>
+                <td class="one half">{{room.name}}</td>
+                <td class="one fourth">{{room.player_count}} / {{room.capacity}}</td>
+                <td class="one fourth">
+                  <button class="success" {{action joinRoom room target="controller"}}>Join</button>
+                </td>
               </tr>
             {{/each}}
           
