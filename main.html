@@ -138,9 +138,17 @@
     
     <!-- TODO: Move into own template file -->
     <script type="text/x-handlebars" data-template-name="game-view">
-      <div id="canvas-container"></div>
+      <div class="container">
+        
+        <div class="row one whole">
+          <div id="canvas-container"></div>
+        </div>
 
-      <b>Speed:</b> {{Space.PlayerInfo.speed}} / {{Space.PlayerInfo.max_speed}}
+        <div class="row one whole padded">
+          <b>Speed:</b> {{Space.PlayerInfo.speed}} / {{Space.PlayerInfo.max_speed}}
+        </div>
+
+      </div>
     </script>
     
     <!-- scripts -->
