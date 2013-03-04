@@ -6,7 +6,8 @@ function Scene(peer_id) {
 
   this.world.broadphase = new CANNON.NaiveBroadphase();
   this.keyboard = new THREEx.KeyboardState();
-  
+  this.mouse = new Space.Mouse();
+
   this.addToPhysicsWorld = function(obj){
     this.world.add(obj);
   };
@@ -66,5 +67,9 @@ function Scene(peer_id) {
         entity.createDummyFromState(self, network_state);
       }
     });
+  };
+
+  this.requestPointerLock = function(element){
+    this.mouse.requestPointerLock(element);
   };
 }

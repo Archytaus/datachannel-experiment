@@ -11,7 +11,7 @@ var initializeWorld = function(scene) {
   // add to the scene
   scene.addToRenderScene(pointLight);
 
-  for(var i = 0; i < 10; i++){
+  for(var i = 0; i < 5; i++){
     var asteroid = new Entity(Space.network.id);
     asteroid.createDummy(scene);
     asteroid.body.position.set(
@@ -140,15 +140,8 @@ Space.JoinRoom = function(roomID) {
         Space.Player.Decelerate();
       }
 
-      //TODO: RS - Replace keyboard rotation with mouse locked rotation
-      if( this.scene.keyboard.pressed("d")){
-        this.body.angularVelocity.y -= 0.01;
-      }
+      this.body.angularVelocity.y = 0.05 * this.scene.mouse.deltaX;
       
-      if( this.scene.keyboard.pressed("a")){
-        this.body.angularVelocity.y += 0.01;
-      }
-
       var worldDirection = this.body.quaternion.vmult(Space.Player.MoveDirection);
       this.body.force = worldDirection;
 

@@ -126,9 +126,9 @@ Space.GameController = Ember.ArrayController.extend({
     this._super();
 
     var self = this;
-    Space.network.onServerMessage('MESSAGE', function(msg){
+    Space.network.onPeerMessage('MESSAGE', function(msg){
       var receivedMessage = msg.data;
-      addMessage(receivedMessage);
+      self.addMessage(receivedMessage);
     });
   }
 });
@@ -159,6 +159,10 @@ Space.GameView = Ember.View.extend({
     });
 
     var canvas = $('#canvas-container canvas');
+    
+    canvas.on('click', function(event){
+      Space.Scene.requestPointerLock(this);
+    });
 
     var WIDTH = 640,
       HEIGHT = 480;
@@ -187,5 +191,7 @@ Space.GameView = Ember.View.extend({
 
     // add the camera to the scene
     Space.Scene.addToRenderScene(Space.Camera);
+
+    Space.Scene.requestPointerLock(canvas[0]);
   }
 });
