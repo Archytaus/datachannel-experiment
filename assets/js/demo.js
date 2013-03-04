@@ -85,13 +85,18 @@ Space.JoinRoom = function(roomID) {
     Space.Player.createDummy(Space.Scene);
     Space.Player.MoveDirection = new CANNON.Vec3();
     Space.Player.MoveSpeed = 50;
+    Space.Player.ControlsEnabled = true;
 
     Space.Player.IsAccelerating = function(){
-      return this.scene.keyboard.pressed("w");
+      return Space.Player.ControlsEnabled && this.scene.keyboard.pressed("w");
     };
 
     Space.Player.IsDecelerating = function(){
-      return this.scene.keyboard.pressed("s");
+      return Space.Player.ControlsEnabled && this.scene.keyboard.pressed("s");
+    };
+
+    Space.Player.IsStartingToType = function(){
+     return Space.Player.ControlsEnabled && this.scene.keyboard.pressed("t");
     };
 
     Space.Player.Accelerate = function(){
@@ -120,10 +125,11 @@ Space.JoinRoom = function(roomID) {
     //TODO: RS - Move elsewhere, perhaps into the view controller?
     Space.Player.update = function() {
       
-      for(var i = 0; i < 10000; i++)
-      {
-        var speed = Space.PlayerInfo.speed;
-        var max_speed = Space.PlayerInfo.max_speed;
+      var speed = Space.PlayerInfo.speed;
+      var max_speed = Space.PlayerInfo.max_speed;
+
+      if(Space.Player.IsStartingToType()){
+        $('.send-message-text').focus();
       }
 
       if (Space.Player.IsAccelerating()) {

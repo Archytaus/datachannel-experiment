@@ -167,7 +167,7 @@
             <form>
               <div class="row one whole new-message">
                 <div class="four fifths">
-                  {{view Ember.TextField valueBinding="view.message" placeholder="Enter message..."}}
+                  {{view Ember.TextField valueBinding="view.message" placeholder="Enter message..." class="send-message-text"}}
                 </div>
                 <div class="one fifth">
                   <button {{action sendMessage target="view" }} type="submit" class="send-message-button">Send</button>

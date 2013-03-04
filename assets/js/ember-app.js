@@ -125,8 +125,9 @@ Space.GameView = Ember.View.extend({
   sendMessage: function(){
     this.get('controller').sendMessage(this.message);
     this.set('message', '');
+    $('.send-message-text').blur();
   },
-  
+
   didInsertElement: function() {
     Space.Renderer = new THREE.WebGLRenderer();
     Space.Renderer.setSize(640, 480);
@@ -134,7 +135,16 @@ Space.GameView = Ember.View.extend({
     var container = $('#canvas-container');
     container.append(Space.Renderer.domElement);
 
+    var messageBox = $('.send-message-text');
+    messageBox.focus(function(){
+      Space.Player.ControlsEnabled = false;
+    });
+    messageBox.blur(function(){
+      Space.Player.ControlsEnabled = true;
+    });
+
     var canvas = $('#canvas-container canvas');
+
     var WIDTH = 640,
       HEIGHT = 480;
 
