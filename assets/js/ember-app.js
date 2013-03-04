@@ -18,6 +18,9 @@ Space.LoginView = Ember.View.extend({
   submit: function(){
     Space.PlayerName = this.player_name;
     this.get('controller').transitionToRoute('rooms');
+  },
+  didInsertElement: function() {
+    $('header h1.heading').css("font-size","66px");
   }
 });
 
@@ -45,6 +48,9 @@ Space.RoomsRoute = Ember.Route.extend({
 });
 
 Space.GameRoute = Ember.Route.extend({
+  setupController: function(controller) {
+    controller.set('content', [{sender: "System", content: "Hello World", timestamp: "10-10-2013"}]);
+  },
   redirect: function () {
     if(Space.Scene === undefined){
       this.transitionTo('rooms');
@@ -100,13 +106,27 @@ Space.RoomsView = Ember.View.extend({
 
 Space.PlayerInfo = Ember.Object.create({
   speed: 0,
-  max_speed: 50
+  max_speed: 50,
+});
+
+Space.GameController = Ember.ArrayController.extend({
+  addMessage: function(message){
+    this.pushObject(message);
+  },
+  sendMessage: function(message){
+    this.addMessage({sender: Space.PlayerName, content: message, timestamp: "Now"});
+  }
 });
 
 Space.GameView = Ember.View.extend({
   templateName: 'game-view',
-  controller: Space.PlayerInfo,
+  message: '',
 
+  sendMessage: function(){
+    this.get('controller').sendMessage(this.message);
+    this.set('message', '');
+  },
+  
   didInsertElement: function() {
     Space.Renderer = new THREE.WebGLRenderer();
     Space.Renderer.setSize(640, 480);

@@ -145,7 +145,36 @@
         </div>
 
         <div class="row one whole padded">
-          <b>Speed:</b> {{Space.PlayerInfo.speed}} / {{Space.PlayerInfo.max_speed}}
+          <div class="row">
+            <b>Speed:</b> {{Space.PlayerInfo.speed}} / {{Space.PlayerInfo.max_speed}}
+          </div>
+
+          <div class="row one half messages"> 
+            {{#each message in controller}}
+              <div class="row">
+                <div class="one fifth message-sender">
+                  <span>{{message.sender}}</span>
+                </div>
+                <div class="three fifths message-body">
+                  <span>{{message.content}}</span>
+                </div>
+                <div class="one fifth message-timestamp">
+                  <span>{{message.timestamp}}</span>
+                </div>
+              </div>
+            {{/each}}
+
+            <form>
+              <div class="row one whole new-message">
+                <div class="four fifths">
+                  {{view Ember.TextField valueBinding="view.message" placeholder="Enter message..."}}
+                </div>
+                <div class="one fifth">
+                  <button {{action sendMessage target="view" }} type="submit" class="send-message-button">Send</button>
+                </div>
+              </div>
+            </form>
+          </div>
         </div>
 
       </div>

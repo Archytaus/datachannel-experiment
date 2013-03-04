@@ -33,3 +33,22 @@ table tbody tr td {
   user-select: none;
 
 }
+
+.send-message-button {
+  height: 2.25em;
+
+  left: -2px;
+  position: relative;
+  
+  z-index: 1;
+  width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+
+  -ms-border-radius: 0 4px 4px 0;
+  -o-border-radius: 0 4px 4px 0;
+  -moz-border-radius: 0 4px 4px 0;
+  -webkit-border-radius: 0 4px 4px 0;
+  border-radius: 0 4px 4px 0;
+}
