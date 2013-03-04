@@ -114,7 +114,22 @@ Space.GameController = Ember.ArrayController.extend({
     this.pushObject(message);
   },
   sendMessage: function(message){
-    this.addMessage({sender: Space.PlayerName, content: message, timestamp: "Now"});
+    var sentMessage = {sender: Space.PlayerName, content: message, timestamp: "Now"};
+    this.addMessage(sentMessage);
+    Space.network.sendPeers({
+      msg_type: "MESSAGE",
+      id: Space.network.id,
+      data: sentMessage
+    });
+  },
+  init: function(){
+    this._super();
+
+    var self = this;
+    Space.network.onServerMessage('MESSAGE', function(msg){
+      var receivedMessage = msg.data;
+      addMessage(receivedMessage);
+    });
   }
 });
 
