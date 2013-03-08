@@ -159,7 +159,7 @@ Space.GameView = Ember.View.extend({
     });
 
     var canvas = $('#canvas-container canvas');
-    
+
     canvas.on('click', function(event){
       Space.Scene.requestPointerLock(this);
     });
@@ -172,7 +172,7 @@ Space.GameView = Ember.View.extend({
       ASPECT = WIDTH / HEIGHT,
       NEAR = 0.1,
       FAR = 10000;
-    
+
     Space.Camera =
       new THREE.PerspectiveCamera(
         VIEW_ANGLE,
@@ -183,10 +183,13 @@ Space.GameView = Ember.View.extend({
     Space.Camera.update = function(){
       Space.Player.body.position.copy(Space.Camera.position);
 
-      var cameraOffset = new CANNON.Vec3(0, 100, 300);
+      var cameraOffset = new CANNON.Vec3(0, 0, -100);
       var cameraWorldOffset = Space.Player.body.quaternion.vmult(cameraOffset);
-      Space.Camera.position.add(cameraWorldOffset);
-      Space.Camera.lookAt(Space.Player.body.position);
+      var lookAtPosition = new CANNON.Vec3(cameraWorldOffset.x + Space.Player.body.position.x,
+        cameraWorldOffset.y + Space.Player.body.position.y,
+        cameraWorldOffset.z + Space.Player.body.position.z);
+      
+      Space.Camera.lookAt(lookAtPosition);
     };
 
     // add the camera to the scene
