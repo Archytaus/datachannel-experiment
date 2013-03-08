@@ -1,5 +1,5 @@
 Space.Mouse = function(){
-    
+
     this.deltaX = 0;
     this.deltaY = 0;
     this.element = undefined;
@@ -7,25 +7,31 @@ Space.Mouse = function(){
     this.hasFocus = false;
 
     this.pos = {x:-1, y:-1};
+    this.centerOffset = {x:-1, y:-1};
+
     this.x = 0;
     this.y = 0;
 
     var self = this;
 
     this.requestPointerLock = function(element){
-        this.element = element;
-        this.pos = {x:-1, y:-1}
+      if(this.hasFocus)
+        return;
 
-        element.requestPointerLock = element.requestPointerLock ||
-            element.mozRequestPointerLock ||
-            element.webkitRequestPointerLock;
+      this.element = element;
+      this.pos = {x:-1, y:-1};
+      this.centerOffset = {x:-1, y:-1};
 
-        element.requestPointerLock();
+      element.requestPointerLock = element.requestPointerLock ||
+          element.mozRequestPointerLock ||
+          element.webkitRequestPointerLock;
 
-        // Hook pointer lock state change events
-        document.addEventListener('pointerlockchange', changeCallback, false);
-        document.addEventListener('mozpointerlockchange', changeCallback, false);
-        document.addEventListener('webkitpointerlockchange', changeCallback, false);
+      element.requestPointerLock();
+
+      // Hook pointer lock state change events
+      document.addEventListener('pointerlockchange', changeCallback, false);
+      document.addEventListener('mozpointerlockchange', changeCallback, false);
+      document.addEventListener('webkitpointerlockchange', changeCallback, false);
     };
 
     this.exitPointerLock = function(){
@@ -54,19 +60,23 @@ Space.Mouse = function(){
       self.pos.x = self.pos.x + self.deltaX * self.mouseSensitivity;
       self.pos.y = self.pos.y + self.deltaY * self.mouseSensitivity;
 
-      if (self.pos.x > $(self.element).width()) {
-        self.pos.x = $(self.element).width();
+      var screenWidth = $(self.element).width();
+      var screenHeight = $(self.element).height();
+
+      self.centerOffset.x = (screenWidth / 2.0) - self.pos.x;
+      self.centerOffset.y = (screenHeight / 2.0) - self.pos.y;
+
+      if (self.pos.x > screenWidth) {
+        self.pos.x = screenWidth;
       } else if (self.pos.x < 0) {
         self.pos.x = 0;
       }
 
-      if (self.pos.y > $(self.element).height()) {
-        self.pos.y = $(self.element).height();
+      if (self.pos.y > screenHeight) {
+        self.pos.y = screenHeight;
       } else if (self.pos.y < 0) {
         self.pos.y = 0;
       }
-
-      console.log("X: " + self.pos.x + ", Y: " + self.pos.y);
     };
 
     // Returns a position based on a mouseevent on a canvas. Based on code

@@ -153,60 +153,37 @@ Space.JoinRoom = function(roomID) {
         Space.Player.Decelerate();
       }
 
-      //Create a quaternion to represent the target rotation
-      var yaw = new CANNON.Quaternion();
-      var pitch = new CANNON.Quaternion();
+      if(this.scene.mouse.hasFocus){
+        var mouseMoveRadius = 100;
+        var mouseDirection = new THREE.Vector2( this.scene.mouse.centerOffset.x, this.scene.mouse.centerOffset.y);
 
-      if(this.scene.mouse.deltaX != 0){
-        yaw.setFromAxisAngle(new CANNON.Vec3(0, 1, 0), (0.01 / 60.0) * this.scene.mouse.deltaX);
+        if(mouseDirection.length() > mouseMoveRadius)
+        {
+          mouseDirection.normalize();
+
+          var rot = new THREE.Vector3();
+          if(mouseDirection.x != 0){
+            rot.y += 0.01 * mouseDirection.x;
+          }
+
+          if(mouseDirection.y != 0){
+            rot.x -= 0.01 * mouseDirection.y;
+          }
+
+          var rotationalOffset = new THREE.Quaternion();
+          rotationalOffset.setFromEuler(rot);
+
+          var angularVelocity = new THREE.Vector3(this.body.angularVelocity.x + rot.x,
+                  this.body.angularVelocity.y + rot.y, this.body.angularVelocity.z + rot.z);
+
+          // rotationalOffset.multiplyVector3(angularVelocity);
+          this.body.angularVelocity = new CANNON.Vec3(angularVelocity.x, angularVelocity.y, angularVelocity.z);
+
+          var worldDirection = this.body.quaternion.vmult(Space.Player.MoveDirection);
+          this.body.force = worldDirection;
+        }
+
       }
-
-      if(this.scene.mouse.deltaY != 0){
-        yaw.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), (0.01 / 60.0) * this.scene.mouse.deltaY);
-      }
-      var rotationalOffset = new CANNON.Quaternion();
-      rotationalOffset = rotationalOffset.mult(yaw);
-      rotationalOffset = rotationalOffset.mult(pitch);
-
-      //this.body.quaternion = this.body.quaternion.mult(rotationalOffset);
-
-      //This will be represented by the mouse pointer
-
-      //Apply torque towards the target rotation
-      var angularVelocityX = new CANNON.Quaternion();
-      var angularVelocityY = new CANNON.Quaternion();
-      var angularVelocityZ = new CANNON.Quaternion();
-
-      angularVelocityX.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), this.body.angularVelocity.x);
-      angularVelocityY.setFromAxisAngle(new CANNON.Vec3(0, 1, 0), this.body.angularVelocity.y);
-      angularVelocityZ.setFromAxisAngle(new CANNON.Vec3(0, 0, 1), this.body.angularVelocity.z);
-
-      var angularVelocity = new CANNON.Quaternion();
-      angularVelocity = angularVelocity.mult(rotationalOffset);
-
-      angularVelocity = angularVelocity.mult(angularVelocityX);
-      angularVelocity = angularVelocity.mult(angularVelocityY);
-      angularVelocity = angularVelocity.mult(angularVelocityZ);
-
-      var newVelocity = new CANNON.Vec3();
-      angularVelocity.toEuler(newVelocity, "YZX");
-      this.body.angularVelocity = newVelocity;
-      
-      // Look into elastic / rope physics for the difference between ship rotation and target reticule
-
-      // this.body.angularVelocity.vadd(angularVelocityOffset, this.body.angularVelocity);
-      // var maxRotation = this.body.angularVelocity.normalize();
-      
-      // if(maxRotation > 1)
-      //   maxRotation = 1;
-
-      // this.body.angularVelocity.mult(maxRotation, this.body.angularVelocity);
-      
-      // this.body.angularVelocity.x += (0.5 * 1.0 / 60.0) * this.scene.mouse.deltaY;
-      // this.body.angularVelocity.y += (0.5 * 1.0 / 60.0) * this.scene.mouse.deltaX;
-      
-      var worldDirection = this.body.quaternion.vmult(Space.Player.MoveDirection);
-      this.body.force = worldDirection;
 
       if(Space.Camera){
         Space.Camera.update();
