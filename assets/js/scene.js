@@ -42,6 +42,7 @@ function Scene(peer_id) {
   this.update = function(){
     this.preUpdate();
     this.world.step(1.0/60.0);
+    this.mouse.reset();
   };
 
   this.findEntity = function(entity_id){
