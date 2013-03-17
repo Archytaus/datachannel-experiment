@@ -22,19 +22,21 @@ var initializeWorld = function(scene) {
 };
 
 //TODO: RS - This whole function is a code smell. Perhaps move it into the scene object?
-var initializeScene = function(){
-  var scene = new Scene(Space.network.id);
+var initializeScene = function(network_id){
+  var scene = new Scene(network_id);
 
-  Space.network.onPeerConnected = function(peer) {
-    peer.entity = new Entity(peer.id);
-    peer.entity.createDummy(scene);
+  if(Space.network){
+    Space.network.onPeerConnected = function(peer) {
+      peer.entity = new Entity(peer.id);
+      peer.entity.createDummy(scene);
 
-    trace("Peer(" + peer.id + ") successfully connected");
-  };
+      trace("Peer(" + peer.id + ") successfully connected");
+    };
 
-  Space.network.onPeerMessage('WORLDSTATE', function(msg) {
-    scene.updateWorldState(msg.data);
-  });
+    Space.network.onPeerMessage('WORLDSTATE', function(msg) {
+      scene.updateWorldState(msg.data);
+    });
+  }
 
   var sendWorldState = function(){
     Space.network.sendPeers({
@@ -54,7 +56,9 @@ var initializeScene = function(){
   var update = function(){
     scene.update();
 
-    sendWorldState();
+    if(Space.network){
+      sendWorldState();
+    }
 
     render();
   };
@@ -62,6 +66,10 @@ var initializeScene = function(){
   setInterval(update, 1000.0/60.0);
 
   return scene;
+};
+
+Space.StartScene = function(network_id){
+  Space.Scene = initializeScene(network_id);
 };
 
 Space.JoinRoom = function(roomID) {
@@ -72,7 +80,7 @@ Space.JoinRoom = function(roomID) {
     data: {id: roomID}
   });
 
-  Space.Scene = initializeScene();
+  Space.StartScene(Space.network.id);
 
   var mouseTexture = THREE.ImageUtils.loadTexture( "assets/textures/mouse.png" );
   Space.MouseImage = new THREE.Sprite( new THREE.SpriteMaterial( { map: mouseTexture } ) );
