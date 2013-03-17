@@ -8,6 +8,8 @@ Space.Mouse = function(){
 
     this.pos = {x:-1, y:-1};
     this.centerOffset = {x:-1, y:-1};
+    this.screenCenter = {x:-1, y:-1};
+    this.screenSize = {width: -1, height: -1};
 
     this.x = 0;
     this.y = 0;
@@ -19,8 +21,16 @@ Space.Mouse = function(){
         return;
 
       this.element = element;
-      this.pos = {x:-1, y:-1};
+
       this.centerOffset = {x:-1, y:-1};
+      this.screenSize = {width: $(self.element).width(),
+                         height: $(self.element).height() };
+
+      this.screenCenter = {x: this.screenSize.width / 2.0,
+                           y: this.screenSize.height / 2.0};
+
+      this.pos = {x: this.screenCenter.x, 
+                  y: this.screenCenter.y};
 
       element.requestPointerLock = element.requestPointerLock ||
           element.mozRequestPointerLock ||
@@ -42,6 +52,13 @@ Space.Mouse = function(){
       self.deltaX = self.deltaY = 0;
     };
 
+    this.move = function(x ,y){
+      self.pos.x += x;
+      self.pos.y += y;
+
+      checkMouseBounds();
+    };
+
     this.moveCallback = function moveCallback(e) {
       if (self.pos.x == -1) {
         self.pos = getPosition(self.element, e);
@@ -60,20 +77,22 @@ Space.Mouse = function(){
       self.pos.x = self.pos.x + self.deltaX * self.mouseSensitivity;
       self.pos.y = self.pos.y + self.deltaY * self.mouseSensitivity;
 
-      var screenWidth = $(self.element).width();
-      var screenHeight = $(self.element).height();
+      checkMouseBounds();
+    };
 
-      self.centerOffset.x = (screenWidth / 2.0) - self.pos.x;
-      self.centerOffset.y = (screenHeight / 2.0) - self.pos.y;
+    var checkMouseBounds = function(){
 
-      if (self.pos.x > screenWidth) {
-        self.pos.x = screenWidth;
+      self.centerOffset.x = self.screenCenter.x - self.pos.x;
+      self.centerOffset.y = self.screenCenter.y - self.pos.y;
+
+      if (self.pos.x > self.screenSize.width) {
+        self.pos.x = self.screenSize.width;
       } else if (self.pos.x < 0) {
         self.pos.x = 0;
       }
 
-      if (self.pos.y > screenHeight) {
-        self.pos.y = screenHeight;
+      if (self.pos.y > self.screenSize.height) {
+        self.pos.y = self.screenSize.height;
       } else if (self.pos.y < 0) {
         self.pos.y = 0;
       }

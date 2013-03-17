@@ -6,6 +6,10 @@ function trace(text) {
   console.log((performance.now() / 1000).toFixed(3) + ": " + text);
 }
 
+Number.prototype.clamp = function(min, max) {
+  return Math.min(Math.max(this, min), max);
+};
+
 Array.prototype.remove = function(from, to){
   var rest = this.slice((to || from) + 1 || this.length);
   this.length = from < 0 ? this.length + from : from;

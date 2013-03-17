@@ -11,7 +11,7 @@ var initializeWorld = function(scene) {
   // add to the scene
   scene.addToRenderScene(pointLight);
 
-  for(var i = 0; i < 5; i++){
+  for(var i = 0; i < 30; i++){
     var asteroid = new Entity(Space.network.id);
     asteroid.createDummy(scene);
     asteroid.body.position.set(
@@ -93,6 +93,7 @@ Space.JoinRoom = function(roomID) {
     Space.Player.MoveDirection = new CANNON.Vec3();
     Space.Player.MoveSpeed = 50;
     Space.Player.ControlsEnabled = true;
+    Space.Player.body.angularDamping = 0.1;
 
     Space.Player.IsAccelerating = function(){
       return Space.Player.ControlsEnabled && this.scene.keyboard.pressed("w");
@@ -128,10 +129,10 @@ Space.JoinRoom = function(roomID) {
         Space.Player.MoveDirection.z = -speed * Space.Player.MoveSpeed;
       }
     };
-    
+
     //TODO: RS - Move elsewhere, perhaps into the view controller?
     Space.Player.update = function() {
-      
+
       Space.MouseImage.visible = this.scene.mouse.hasFocus;
 
       if(this.scene.mouse.hasFocus){
@@ -154,20 +155,21 @@ Space.JoinRoom = function(roomID) {
       }
 
       if(this.scene.mouse.hasFocus){
-        var mouseMoveRadius = 100;
-        var mouseDirection = new THREE.Vector2( this.scene.mouse.centerOffset.x, this.scene.mouse.centerOffset.y);
+        var mouseMoveRadius = 10;
+        var mouseDirection = new THREE.Vector2(this.scene.mouse.centerOffset.x, this.scene.mouse.centerOffset.y);
+        console.log("X: " + mouseDirection.x + ", Y: " + mouseDirection.y);
 
         if(mouseDirection.length() > mouseMoveRadius)
         {
           mouseDirection.normalize();
 
           var rot = new THREE.Vector3();
-          if(mouseDirection.x != 0){
+          if(mouseDirection.x !== 0){
             rot.y += 0.01 * mouseDirection.x;
           }
 
-          if(mouseDirection.y != 0){
-            rot.x -= 0.01 * mouseDirection.y;
+          if(mouseDirection.y !== 0){
+            rot.x += 0.01 * mouseDirection.y;
           }
 
           var rotationalOffset = new THREE.Quaternion();
@@ -176,14 +178,19 @@ Space.JoinRoom = function(roomID) {
           var angularVelocity = new THREE.Vector3(this.body.angularVelocity.x + rot.x,
                   this.body.angularVelocity.y + rot.y, this.body.angularVelocity.z + rot.z);
 
-          // rotationalOffset.multiplyVector3(angularVelocity);
           this.body.angularVelocity = new CANNON.Vec3(angularVelocity.x, angularVelocity.y, angularVelocity.z);
 
           var worldDirection = this.body.quaternion.vmult(Space.Player.MoveDirection);
           this.body.force = worldDirection;
         }
-
       }
+
+      var mouseOffset = new THREE.Vector2(this.scene.mouse.screenCenter.x - this.scene.mouse.pos.x,
+                                          this.scene.mouse.screenCenter.y - this.scene.mouse.pos.y);
+
+      mouseOffset.normalize();
+
+      this.scene.mouse.move(mouseOffset.x, mouseOffset.y);
 
       if(Space.Camera){
         Space.Camera.update();
