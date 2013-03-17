@@ -188,7 +188,7 @@ Space.GameView = Ember.View.extend({
       var lookAtPosition = new CANNON.Vec3(cameraWorldOffset.x + Space.Player.body.position.x,
         cameraWorldOffset.y + Space.Player.body.position.y,
         cameraWorldOffset.z + Space.Player.body.position.z);
-      
+
       Space.Camera.lookAt(lookAtPosition);
     };
 

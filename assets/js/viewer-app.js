@@ -19,7 +19,22 @@ Space.ViewerView = Ember.View.extend({
     container.append(Space.Renderer.domElement);
 
     Space.StartScene();
+    var asteroid = new Entity();
+    asteroid.createDummy(Space.Scene);
+    asteroid.body.position.set(0, 0, 0);
+    
+      // create a point light
+    var pointLight =
+      new THREE.PointLight(0xFFFFFF);
 
+    // set its position
+    pointLight.position.x = 10;
+    pointLight.position.y = 50;
+    pointLight.position.z = 130;
+
+    // add to the scene
+    Space.Scene.addToRenderScene(pointLight);
+    
     var WIDTH = 640,
       HEIGHT = 480;
 
@@ -35,6 +50,9 @@ Space.ViewerView = Ember.View.extend({
         ASPECT,
         NEAR,
         FAR);
+    
+    Space.Camera.position = new THREE.Vector3(100, 100, 100);
+    Space.Camera.lookAt(new THREE.Vector3(0, 0, 0));
 
     // add the camera to the scene
     Space.Scene.addToRenderScene(Space.Camera);

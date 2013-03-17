@@ -165,7 +165,6 @@ Space.JoinRoom = function(roomID) {
       if(this.scene.mouse.hasFocus){
         var mouseMoveRadius = 10;
         var mouseDirection = new THREE.Vector2(this.scene.mouse.centerOffset.x, this.scene.mouse.centerOffset.y);
-        console.log("X: " + mouseDirection.x + ", Y: " + mouseDirection.y);
 
         if(mouseDirection.length() > mouseMoveRadius)
         {
